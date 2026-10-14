@@ -6,45 +6,40 @@
 <title>Akoranga Typing Challenge</title>
 <style>
   :root {
-    --bg: #f4f7fb; --card: #ffffff; --ink: #1f2937; --muted: #64748b;
-    --brand: #4f46e5; --brand-dark: #3730a3; --good: #16a34a; --bad: #dc2626; --line: #e2e8f0;
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --ink: #1f2937;
+    --muted: #64748b;
+    --brand: #4f46e5;
+    --brand-dark: #3730a3;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --line: #e2e8f0;
   }
   * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  html, body { height: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-    height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
   header {
-    flex: none; background: var(--brand); color: #fff; padding: 6px 14px;
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: var(--brand); color: #fff; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
   }
-  header h1 { margin: 0; font-size: clamp(1rem, 2.8vh, 1.3rem); cursor: pointer; border-radius: 6px; }
-  header h1:hover { text-decoration: underline; }
-  header h1:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
   nav button {
     background: rgba(255,255,255,.18); color: #fff; border: 0; border-radius: 8px;
-    padding: 5px 10px; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; margin-left: 6px;
+    padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; margin-left: 6px;
   }
   nav button:hover { background: rgba(255,255,255,.3); }
-
-  /* main scrolls only if the screen is genuinely too small; otherwise everything fits */
-  main {
-    flex: 1; min-height: 0; width: 100%; max-width: 1500px; margin: 0 auto; padding: 8px 12px;
-    overflow-y: auto; display: flex; flex-direction: column;
-  }
-  main > section { flex: 1 0 auto; display: flex; flex-direction: column; }
-
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  section[hidden] { display: none; }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 12px 14px; box-shadow: 0 2px 6px rgba(15,23,42,.05);
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(15,23,42,.05);
   }
-  h2 { margin: 0 0 6px; font-size: 1.05rem; }
-  p { line-height: 1.45; margin: 6px 0; }
+  h2 { margin: 0 0 8px; font-size: 1.25rem; }
+  p { line-height: 1.5; margin: 6px 0; }
   .muted { color: var(--muted); }
-  .small { font-size: .85rem; }
   button.primary {
     background: var(--brand); color: #fff; border: 0; border-radius: 10px;
     padding: 10px 18px; font: inherit; font-weight: 700; cursor: pointer;
@@ -56,84 +51,66 @@
   }
   button.ghost:hover { background: #eef2ff; }
 
-  /* ---------- home: two columns on wide screens, one column on narrow ---------- */
-  #home { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
-  @media (max-width: 899px) { #home { grid-template-columns: 1fr; } }
-  #introHands .hands { display: block; width: 100%; max-width: min(440px, 52vh); margin: 0 auto; }
-  .rules { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; font-size: clamp(.95rem, 2.4vh, 1.1rem); }
+  /* intro */
+  .intro-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .rules { margin: 8px 0 0; padding-left: 20px; line-height: 1.7; }
   .rules b { color: var(--brand-dark); }
 
-  .name-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  .name-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
   .name-row input {
-    font: inherit; font-size: 1.05rem; padding: 7px 12px; border: 2px solid var(--line);
-    border-radius: 10px; width: 100%; max-width: 360px;
+    font: inherit; font-size: 1.1rem; padding: 8px 12px; border: 2px solid var(--line);
+    border-radius: 10px; width: 280px;
   }
   .name-row input:focus { outline: none; border-color: var(--brand); }
   .name-row input.ok { border-color: var(--good); background: #f0fdf4; }
   .name-row input.bad { border-color: var(--bad); }
-  .ac { position: relative; max-width: 360px; }
+  .ac { position: relative; }
   .ac-list {
     position: absolute; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none;
-    background: #fff; border: 2px solid var(--brand); border-radius: 10px; max-height: 240px;
+    background: #fff; border: 2px solid var(--brand); border-radius: 10px; max-height: 260px;
     overflow-y: auto; z-index: 5; box-shadow: 0 8px 20px rgba(15,23,42,.15);
   }
-  .ac-list li { padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 1.05rem; }
+  .ac-list[hidden] { display: none; }
+  .ac-list li { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 1.05rem; }
   .ac-list li.active, .ac-list li:hover { background: #eef2ff; }
   .ac-list li.none { cursor: default; color: var(--muted); }
   .bad-text { color: var(--bad); font-weight: 700; }
 
-  .lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  .lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
   .lesson-btn {
-    text-align: left; background: #fff; border: 2px solid var(--line); border-radius: 12px;
-    padding: 7px 10px; cursor: pointer; font: inherit; position: relative;
+    text-align: left; background: #fff; border: 2px solid var(--line); border-radius: 14px;
+    padding: 12px; cursor: pointer; font: inherit; position: relative;
   }
   .lesson-btn:hover:not(:disabled) { border-color: var(--brand); background: #f5f3ff; }
   .lesson-btn:disabled { opacity: .5; cursor: not-allowed; }
-  .lesson-btn .num { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
-  .lesson-btn .t { font-size: 1rem; font-weight: 800; }
-  .lesson-btn .best { font-size: .8rem; color: var(--muted); }
-  .lesson-btn .stars { position: absolute; top: 6px; right: 10px; color: #f59e0b; letter-spacing: 1px; font-size: .9rem; }
-  .foot { margin-top: 8px; color: var(--muted); font-size: .8rem; }
-  .foot a { color: var(--muted); cursor: pointer; text-decoration: underline; }
+  .lesson-btn .num { font-size: .8rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+  .lesson-btn .t { font-size: 1.15rem; font-weight: 800; margin: 2px 0; }
+  .lesson-btn .best { font-size: .85rem; color: var(--muted); }
+  .lesson-btn .stars { position: absolute; top: 10px; right: 12px; color: #f59e0b; letter-spacing: 1px; }
 
-  /* ---------- lesson: one screen, sized to the window ---------- */
-  #lesson { gap: 6px; }
-  .topbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .topbar .title { flex: 1; min-width: 130px; }
-  .topbar .title .muted { font-size: .72rem; line-height: 1.1; }
-  .topbar h2 { margin: 0; font-size: 1.05rem; line-height: 1.15; }
-  .tbtn {
-    background: #fff; color: var(--brand); border: 2px solid var(--brand); border-radius: 10px;
-    padding: 5px 11px; font: inherit; font-size: .88rem; font-weight: 800; cursor: pointer; white-space: nowrap;
-  }
-  .tbtn:hover { background: #eef2ff; }
-  .tbtn.restart { background: #f97316; border-color: #f97316; color: #fff; }
-  .tbtn.restart:hover { background: #ea580c; border-color: #ea580c; }
-  .tbtn.restart small { font-weight: 600; opacity: .85; }
-  .toggle { display: flex; align-items: center; gap: 5px; font-size: .82rem; color: var(--muted); white-space: nowrap; }
-  .stats { display: flex; gap: 6px; }
-  .stat { background: #eef2ff; border-radius: 10px; padding: 2px 10px; text-align: center; min-width: 62px; }
-  .stat .v { font-size: 1.15rem; font-weight: 800; color: var(--brand-dark); line-height: 1.2; }
-  .stat .l { font-size: .6rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
-  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  /* lesson */
+  .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat { background: #eef2ff; border-radius: 12px; padding: 6px 14px; text-align: center; min-width: 84px; }
+  .stat .v { font-size: 1.4rem; font-weight: 800; color: var(--brand-dark); }
+  .stat .l { font-size: .72rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0; }
   .progress > div { height: 100%; width: 0; background: var(--good); transition: width .1s; }
 
+  #text {
+    font-family: "Courier New", ui-monospace, monospace; font-size: 2.1rem; line-height: 1.7;
+    background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 18px;
+    word-break: break-word; user-select: none;
+  }
   .textbox { position: relative; }
   #pacer {
-    position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #f97316;
+    position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #f97316;
     border: 2px solid #fff; box-shadow: 0 0 0 2px #f97316, 0 2px 6px rgba(0,0,0,.35);
     transform: translateX(-50%); pointer-events: none; z-index: 2;
   }
-  .pacer-legend { text-align: center; font-size: .82rem; color: var(--muted); font-weight: 700; line-height: 1.2; }
-  .pacer-legend .pdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f97316; vertical-align: -1px; margin-right: 6px; }
-
-  #text {
-    font-family: "Courier New", ui-monospace, monospace;
-    font-size: clamp(1.15rem, min(2.5vw, 4.8vh), 2.4rem); line-height: 1.7;
-    background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 14px;
-    user-select: none;
-  }
-  #text .w { white-space: nowrap; }
+  #pacer[hidden] { display: none; }
+  .pacer-legend { text-align: center; font-size: .95rem; color: var(--muted); margin-top: 8px; font-weight: 700; }
+  .pacer-legend .pdot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #f97316; vertical-align: -1px; margin-right: 6px; }
   #text .ch { display: inline-block; min-width: .6em; text-align: center; border-bottom: 3px solid transparent; }
   #text .ch.done { color: var(--good); }
   #text .ch.cur { background: #fef08a; border-bottom-color: var(--brand); border-radius: 4px; }
@@ -143,79 +120,81 @@
   @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
   #coach {
-    padding: 5px 12px; border-radius: 10px; font-size: clamp(.9rem, 2.2vh, 1.1rem); font-weight: 700;
-    background: #eef2ff; color: var(--brand-dark); text-align: center; line-height: 1.25;
+    margin: 12px 0 6px; padding: 10px 14px; border-radius: 12px; font-size: 1.15rem; font-weight: 700;
+    background: #eef2ff; color: var(--brand-dark); text-align: center; min-height: 48px;
   }
   #coach.bad { background: #fee2e2; color: var(--bad); }
-  #coach .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 6px; }
+  #coach .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -1px; margin-right: 6px; }
 
-  /* the hands take whatever height is left over */
-  #lessonHands { flex: 1 1 0; min-height: 64px; position: relative; }
-  #lessonHands .hands { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hands { width: 100%; max-width: 620px; display: block; margin: 4px auto; }
   .hands text { font-family: "Trebuchet MS", sans-serif; font-weight: 800; fill: #1f2937; pointer-events: none; }
   .hands rect[data-f] { transition: fill-opacity .12s, stroke-width .12s; }
 
-  /* keyboard scales with both screen width and height */
-  .kb {
-    --k: min(calc((100vw - 40px) / 12.4), 7.4vh, 66px);
-    margin: 0 auto 2px; flex: none; user-select: none;
-  }
-  .kb .row { display: flex; gap: calc(var(--k) * .12); margin-bottom: calc(var(--k) * .12); }
-  .kb .row:nth-child(2) { margin-left: calc(var(--k) * .45); }
-  .kb .row:nth-child(3) { margin-left: calc(var(--k) * 1.05); }
-  .kb .row.spacerow { margin-left: calc(var(--k) * 2.4); margin-bottom: 0; }
+  /* keyboard */
+  .kb { margin: 10px auto 0; width: fit-content; max-width: 100%; user-select: none; }
+  .kb .row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .kb .row:nth-child(1) { margin-left: 0; }
+  .kb .row:nth-child(2) { margin-left: 22px; }
+  .kb .row:nth-child(3) { margin-left: 52px; }
   .key {
-    width: var(--k); height: var(--k); border-radius: calc(var(--k) * .2); border: 2px solid rgba(0,0,0,.12);
+    width: 48px; height: 48px; border-radius: 10px; border: 2px solid rgba(0,0,0,.12);
     display: flex; align-items: center; justify-content: center;
-    font-family: "Courier New", monospace; font-weight: 800; font-size: calc(var(--k) * .42); text-transform: uppercase;
+    font-family: "Courier New", monospace; font-weight: 800; font-size: 1.15rem; text-transform: uppercase;
     position: relative; transition: transform .08s, opacity .12s;
   }
-  .key.space { width: calc(var(--k) * 6.2); font-size: calc(var(--k) * .3); }
   .key.off { opacity: .3; }
-  .key.next { transform: scale(1.15); border: 3px solid #111827; box-shadow: 0 4px 12px rgba(0,0,0,.35); opacity: 1; z-index: 2; }
+  .key.next { transform: scale(1.18); border: 3px solid #111827; box-shadow: 0 4px 12px rgba(0,0,0,.35); opacity: 1; z-index: 2; }
   .key.wrong { background: #fecaca !important; border-color: var(--bad); }
-  .key.bump::after { content: ""; position: absolute; bottom: calc(var(--k) * .12); width: calc(var(--k) * .33); height: 3px; background: #111827; border-radius: 2px; }
+  .key.bump::after { content: ""; position: absolute; bottom: 6px; width: 16px; height: 3px; background: #111827; border-radius: 2px; }
   .kb.hide .key { color: transparent; }
+  .kb.hide .key.next { color: transparent; }
+  .key.space { width: 300px; margin: 0 auto; }
+  .kb .row.spacerow { margin-left: 100px; }
+  .toggle { display: flex; align-items: center; gap: 6px; font-size: .95rem; color: var(--muted); justify-content: center; margin-top: 8px; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
 
-  /* ---------- results ---------- */
+  /* results */
   #results {
     position: fixed; inset: 0; background: rgba(15,23,42,.55); display: flex;
-    align-items: center; justify-content: center; padding: 12px; z-index: 10;
+    align-items: center; justify-content: center; padding: 16px; z-index: 10;
   }
-  .modal { background: #fff; border-radius: 20px; padding: 18px 22px; max-width: 460px; width: 100%; text-align: center; max-height: 94vh; overflow-y: auto; }
-  .modal p { margin: 4px 0; }
-  .rank { background: #fffbeb; border: 2px solid #fcd34d; border-radius: 14px; padding: 8px 14px; margin-top: 8px; }
-  .rank .rank-h { font-size: 1.15rem; font-weight: 800; color: #92400e; }
+  #results[hidden] { display: none; }
+  .modal { background: #fff; border-radius: 20px; padding: 24px; max-width: 460px; width: 100%; text-align: center; max-height: 92vh; overflow-y: auto; }
+  .rank { background: #fffbeb; border: 2px solid #fcd34d; border-radius: 14px; padding: 10px 14px; margin-top: 10px; }
+  .rank .rank-h { font-size: 1.2rem; font-weight: 800; color: #92400e; }
   .rank .rank-l { margin: 4px 0; font-weight: 700; }
-  .rank .rank-s { font-size: .8rem; color: var(--muted); margin-top: 4px; }
-  .bigstars { font-size: 2rem; color: #f59e0b; letter-spacing: 4px; line-height: 1.1; }
-  .modal .nums { display: flex; justify-content: center; gap: 12px; margin: 8px 0; }
-  .modal .stat { min-width: 110px; padding: 4px 10px; }
-  .modal .stat .v { font-size: 1.4rem; }
-  .modal .actions { display: flex; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
-  #submitStatus { font-size: .85rem; color: var(--muted); margin-top: 6px; min-height: 18px; }
+  .rank .rank-s { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+  .bigstars { font-size: 2.4rem; color: #f59e0b; letter-spacing: 4px; }
+  .modal .nums { display: flex; justify-content: center; gap: 12px; margin: 12px 0; }
+  .modal .stat { min-width: 110px; }
+  .modal .actions { margin-top: 16px; }
+  #submitStatus { font-size: .9rem; color: var(--muted); margin-top: 8px; min-height: 20px; }
 
-  /* ---------- leaderboard ---------- */
+  /* leaderboard */
   table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); }
-  th { font-size: .75rem; text-transform: uppercase; color: var(--muted); }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: .8rem; text-transform: uppercase; color: var(--muted); }
   tr.me td { background: #fef9c3; font-weight: 800; }
-  .board-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
-  select { font: inherit; padding: 6px; border-radius: 8px; border: 2px solid var(--line); }
+  .board-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  select { font: inherit; padding: 8px; border-radius: 8px; border: 2px solid var(--line); }
+  .foot { text-align: center; color: var(--muted); font-size: .85rem; margin: 20px 0; }
+  .foot a { color: var(--muted); cursor: pointer; text-decoration: underline; }
 
-  /* very short screens: tighten a little more */
-  @media (max-height: 560px) {
-    main { padding: 4px 10px; }
-    #lesson { gap: 4px; }
-    .stat .l { display: none; }
-    .pacer-legend { display: none; }
+  @media (max-width: 700px) {
+    .key { width: 30px; height: 36px; font-size: .9rem; border-radius: 6px; }
+    .kb .row { gap: 4px; }
+    .kb .row:nth-child(2) { margin-left: 14px; }
+    .kb .row:nth-child(3) { margin-left: 34px; }
+    .key.space { width: 180px; }
+    .kb .row.spacerow { margin-left: 60px; }
+    #text { font-size: 1.5rem; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1 id="homeLink" role="button" tabindex="0" title="Back to the home page">🖐 Akoranga Typing Challenge</h1>
+  <h1>🖐 Akoranga Typing Challenge</h1>
   <nav>
     <button id="navHome">Lessons</button>
     <button id="navBoard">🏆 Leaderboard</button>
@@ -228,14 +207,16 @@
   <section id="home">
     <div class="card">
       <h2>Home position</h2>
-      <div id="introHands"></div>
-      <ol class="rules">
-        <li>Rest your <b>left fingers</b> on <b>A S D F</b> and your <b>right fingers</b> on <b>J K L ;</b></li>
-        <li>Feel the bumps on <b>F</b> and <b>J</b>. Your <b>index fingers</b> live there!</li>
-        <li>Both <b>thumbs</b> hover over the <b>space bar</b>.</li>
-        <li>Match the colours: every key has its own finger. Return <b>home</b> after each key.</li>
-        <li>No peeking at the keyboard. Eyes on the words!</li>
-      </ol>
+      <div class="intro-grid">
+        <div id="introHands"></div>
+        <ol class="rules">
+          <li>Rest your <b>left fingers</b> on <b>A S D F</b> and your <b>right fingers</b> on <b>J K L ;</b></li>
+          <li>Feel the little bumps on <b>F</b> and <b>J</b>. Your <b>index fingers</b> live there!</li>
+          <li>Both <b>thumbs</b> hang over the <b>space bar</b>.</li>
+          <li>Every key has its own finger. <b>Match the colours.</b> After each key, <b>return home</b>.</li>
+          <li>No peeking at the keyboard. Eyes on the words!</li>
+        </ol>
+      </div>
     </div>
 
     <div class="card">
@@ -246,34 +227,42 @@
                  role="combobox" aria-autocomplete="list" aria-controls="nameList">
           <ul id="nameList" class="ac-list" role="listbox" hidden></ul>
         </div>
-        <span id="nameHint" class="muted small">Start typing, then pick your name from the list.</span>
+        <span id="nameHint" class="muted">Start typing, then pick your name from the list.</span>
       </div>
       <h2>Pick a lesson</h2>
       <div class="lessons" id="lessonList"></div>
-      <p class="muted small">Get <b>90% accuracy</b> or better to unlock the next lesson. Accuracy first, speed will follow!</p>
-      <div class="foot"><a id="unlockAll">Teacher: unlock all lessons</a></div>
+      <p class="muted" style="margin-top:12px">Get <b>90% accuracy</b> or better to unlock the next lesson. Accuracy first, speed will follow!</p>
     </div>
+    <div class="foot"><a id="unlockAll">Teacher: unlock all lessons</a></div>
   </section>
 
   <!-- LESSON -->
   <section id="lesson" hidden>
-    <div class="topbar">
-      <button class="tbtn" id="backBtn">← Lessons</button>
-      <div class="title"><div class="muted" id="lessonNum"></div><h2 id="lessonTitle"></h2></div>
-      <div class="stats">
-        <div class="stat"><div class="v" id="sWpm">0</div><div class="l">WPM</div></div>
-        <div class="stat"><div class="v" id="sAcc">100%</div><div class="l">Accuracy</div></div>
-        <div class="stat"><div class="v" id="sTime">0:00</div><div class="l">Time</div></div>
+    <div class="card">
+      <div class="topbar">
+        <div>
+          <div class="muted" id="lessonNum"></div>
+          <h2 id="lessonTitle" style="margin:0"></h2>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v" id="sWpm">0</div><div class="l">WPM</div></div>
+          <div class="stat"><div class="v" id="sAcc">100%</div><div class="l">Accuracy</div></div>
+          <div class="stat"><div class="v" id="sTime">0:00</div><div class="l">Time</div></div>
+        </div>
       </div>
-      <label class="toggle"><input type="checkbox" id="hideKeys"> Hide letters</label>
-      <button class="tbtn restart" id="restartBtn" title="Shortcut: press the Tab key">↻ Start again <small>(Tab)</small></button>
+      <p class="muted" id="lessonTip"></p>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="textbox"><div id="text"></div><div id="pacer" hidden></div></div>
+      <div class="pacer-legend" id="pacerLegend"></div>
+      <div id="coach"></div>
+      <div id="lessonHands"></div>
+      <div class="kb" id="kb"></div>
+      <label class="toggle"><input type="checkbox" id="hideKeys"> Hide the key letters (no peeking challenge!)</label>
+      <div class="actions">
+        <button class="ghost" id="restartBtn">↻ New words</button>
+        <button class="ghost" id="backBtn">← Lessons</button>
+      </div>
     </div>
-    <div class="progress"><div id="bar"></div></div>
-    <div class="textbox"><div id="text"></div><div id="pacer" hidden></div></div>
-    <div class="pacer-legend" id="pacerLegend"></div>
-    <div id="coach"></div>
-    <div id="lessonHands"></div>
-    <div class="kb" id="kb"></div>
   </section>
 
   <!-- LEADERBOARD -->
@@ -323,7 +312,7 @@
    (it ends in /exec). Leave it empty to keep scores on this
    computer only.
    ============================================================ */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPSC32KcFH4Ui0YkquUPl748DX5KQi2zoVPRohTe2XC1m6Pn4p3XCeUpuU9-DHWlfRGQ/exec";
+const SCRIPT_URL = "";
 
 const MIN_ACCURACY = 90;      // % needed to pass a lesson / post a score
 const PASSAGE_LENGTH = 45;    // characters per round (longer in the last lesson)
@@ -593,10 +582,7 @@ nameInput.addEventListener("blur", () => {
   }
 });
 if (P.name) { nameInput.value = P.name; nameInput.classList.add("ok"); setNameHint("Hi " + P.name.split(" ")[0] + "! Pick a lesson below.", false); fetchRows(false); }
-function goHome() { $("results").hidden = true; show("home"); renderLessons(); }
-$("navHome").onclick = goHome;
-$("homeLink").onclick = goHome;   // clicking the title goes home from anywhere
-$("homeLink").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); } });
+$("navHome").onclick = () => show("home");
 $("navBoard").onclick = () => { show("board"); loadBoard(); };
 
 /* ---------- Pacer dot ----------
@@ -639,8 +625,8 @@ async function upgradePacer(st, i) {
   else setPacer(st, { wpm: r1(r.mine + 1), kind: "top" });   // top of the class: beat your own best by 1 WPM
 }
 
-function placePacer(chars, pos) {
-  const n = chars.length;
+function placePacer(pos) {
+  const chars = $("text").children, n = chars.length;
   if (!n) return;
   const i = Math.min(n - 1, Math.floor(pos));
   const frac = pos >= n ? 0 : pos - Math.floor(pos);
@@ -664,7 +650,7 @@ function startPacer(st) {
       }
       st.pacerT = ts;
     }
-    placePacer(st.chars, st.pacerPos);
+    placePacer(st.pacerPos);
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
@@ -687,6 +673,7 @@ function startLesson(i) {
   $("results").hidden = true;
   $("lessonNum").textContent = `Lesson ${i + 1} of ${LESSONS.length}`;
   $("lessonTitle").textContent = L.title;
+  $("lessonTip").textContent = L.tip;
   $("hideKeys").checked = !!P.hide;
   kbEl.classList.toggle("hide", !!P.hide);
 
@@ -695,23 +682,18 @@ function startLesson(i) {
   Object.keys(keyEls).forEach(k => keyEls[k].classList.toggle("off", !allowed.has(k)));
 
   $("text").innerHTML = "";
-  S.chars = [];
-  let wrap = null;   // each word (plus its trailing space) is kept together so lines never break mid-word
   [...text].forEach(c => {
-    if (!wrap) { wrap = document.createElement("span"); wrap.className = "w"; $("text").appendChild(wrap); }
     const s = document.createElement("span");
     s.className = "ch" + (c === " " ? " sp" : "");
     s.textContent = c === " " ? "\u00A0" : c;
-    wrap.appendChild(s);
-    S.chars.push(s);
-    if (c === " ") wrap = null;
+    $("text").appendChild(s);
   });
   $("sWpm").textContent = "0"; $("sAcc").textContent = "100%"; $("sTime").textContent = "0:00";
   $("bar").style.width = "0%";
   show("lesson");
   if (document.activeElement) document.activeElement.blur();
   refresh();
-  setCoach("💡 " + L.tip + " Start typing when you're ready!", false);
+  setCoach("Rest your fingers on the home row. Start typing when you're ready!", false);
 
   const best0 = me().best[i];
   if (!best0) setPacer(S, { wpm: FIRST_PACE, kind: "first" });
@@ -720,7 +702,8 @@ function startLesson(i) {
 }
 
 function refresh() {
-  S.chars.forEach((el, idx) => {
+  const chars = $("text").children;
+  [...chars].forEach((el, idx) => {
     el.classList.toggle("done", idx < S.pos);
     el.classList.toggle("cur", idx === S.pos);
     if (idx !== S.pos) el.classList.remove("err");
@@ -774,7 +757,7 @@ function onKey(raw) {
   } else {
     S.missed[expected] = (S.missed[expected] || 0) + 1;
     $("sAcc").textContent = Math.round(S.correct / S.total * 100) + "%";
-    const cur = S.chars[S.pos];
+    const cur = $("text").children[S.pos];
     cur.classList.remove("err"); void cur.offsetWidth; cur.classList.add("err");
     const kp = keyEls[ch];
     if (kp) { kp.classList.add("wrong"); setTimeout(() => kp.classList.remove("wrong"), 220); }
@@ -788,7 +771,6 @@ document.addEventListener("keydown", e => {
   if (!S || S.done || $("lesson").hidden) return;
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === "Escape") { show("home"); renderLessons(); return; }
-  if (e.key === "Tab") { e.preventDefault(); startLesson(S.i); return; }   // Tab = start again
   if (e.key.length !== 1) return;
   e.preventDefault();
   onKey(e.key);
