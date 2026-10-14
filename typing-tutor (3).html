@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Akoranga Typing Challenge</title>
+<style>
+  :root {
+    --bg: #f4f7fb; --card: #ffffff; --ink: #1f2937; --muted: #64748b;
+    --brand: #4f46e5; --brand-dark: #3730a3; --good: #16a34a; --bad: #dc2626; --line: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    flex: none; background: var(--brand); color: #fff; padding: 6px 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  header h1 { margin: 0; font-size: clamp(1rem, 2.8vh, 1.3rem); cursor: pointer; border-radius: 6px; }
+  header h1:hover { text-decoration: underline; }
+  header h1:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  nav button {
+    background: rgba(255,255,255,.18); color: #fff; border: 0; border-radius: 8px;
+    padding: 5px 10px; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; margin-left: 6px;
+  }
+  nav button:hover { background: rgba(255,255,255,.3); }
+
+  /* main scrolls only if the screen is genuinely too small; otherwise everything fits */
+  main {
+    flex: 1; min-height: 0; width: 100%; max-width: 1500px; margin: 0 auto; padding: 8px 12px;
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  main > section { flex: 1 0 auto; display: flex; flex-direction: column; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px; box-shadow: 0 2px 6px rgba(15,23,42,.05);
+  }
+  h2 { margin: 0 0 6px; font-size: 1.05rem; }
+  p { line-height: 1.45; margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: .85rem; }
+  button.primary {
+    background: var(--brand); color: #fff; border: 0; border-radius: 10px;
+    padding: 10px 18px; font: inherit; font-weight: 700; cursor: pointer;
+  }
+  button.primary:hover { background: var(--brand-dark); }
+  button.ghost {
+    background: #fff; color: var(--brand); border: 2px solid var(--brand); border-radius: 10px;
+    padding: 8px 16px; font: inherit; font-weight: 700; cursor: pointer;
+  }
+  button.ghost:hover { background: #eef2ff; }
+
+  /* ---------- home: two columns on wide screens, one column on narrow ---------- */
+  #home { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+  @media (max-width: 899px) { #home { grid-template-columns: 1fr; } }
+  #introHands .hands { display: block; width: 100%; max-width: min(440px, 52vh); margin: 0 auto; }
+  .rules { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; font-size: clamp(.95rem, 2.4vh, 1.1rem); }
+  .rules b { color: var(--brand-dark); }
+
+  .name-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  .name-row input {
+    font: inherit; font-size: 1.05rem; padding: 7px 12px; border: 2px solid var(--line);
+    border-radius: 10px; width: 100%; max-width: 360px;
+  }
+  .name-row input:focus { outline: none; border-color: var(--brand); }
+  .name-row input.ok { border-color: var(--good); background: #f0fdf4; }
+  .name-row input.bad { border-color: var(--bad); }
+  .ac { position: relative; max-width: 360px; }
+  .ac-list {
+    position: absolute; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none;
+    background: #fff; border: 2px solid var(--brand); border-radius: 10px; max-height: 240px;
+    overflow-y: auto; z-index: 5; box-shadow: 0 8px 20px rgba(15,23,42,.15);
+  }
+  .ac-list li { padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 1.05rem; }
+  .ac-list li.active, .ac-list li:hover { background: #eef2ff; }
+  .ac-list li.none { cursor: default; color: var(--muted); }
+  .bad-text { color: var(--bad); font-weight: 700; }
+
+  .lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  .lesson-btn {
+    text-align: left; background: #fff; border: 2px solid var(--line); border-radius: 12px;
+    padding: 7px 10px; cursor: pointer; font: inherit; position: relative;
+  }
+  .lesson-btn:hover:not(:disabled) { border-color: var(--brand); background: #f5f3ff; }
+  .lesson-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .lesson-btn .num { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+  .lesson-btn .t { font-size: 1rem; font-weight: 800; }
+  .lesson-btn .best { font-size: .8rem; color: var(--muted); }
+  .lesson-btn .stars { position: absolute; top: 6px; right: 10px; color: #f59e0b; letter-spacing: 1px; font-size: .9rem; }
+  .foot { margin-top: 8px; color: var(--muted); font-size: .8rem; }
+  .foot a { color: var(--muted); cursor: pointer; text-decoration: underline; }
+
+  /* ---------- lesson: one screen, sized to the window ---------- */
+  #lesson { gap: 6px; }
+  .topbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .topbar .title { flex: 1; min-width: 130px; }
+  .topbar .title .muted { font-size: .72rem; line-height: 1.1; }
+  .topbar h2 { margin: 0; font-size: 1.05rem; line-height: 1.15; }
+  .tbtn {
+    background: #fff; color: var(--brand); border: 2px solid var(--brand); border-radius: 10px;
+    padding: 5px 11px; font: inherit; font-size: .88rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+  }
+  .tbtn:hover { background: #eef2ff; }
+  .tbtn.restart { background: #f97316; border-color: #f97316; color: #fff; }
+  .tbtn.restart:hover { background: #ea580c; border-color: #ea580c; }
+  .tbtn.restart small { font-weight: 600; opacity: .85; }
+  .toggle { display: flex; align-items: center; gap: 5px; font-size: .82rem; color: var(--muted); white-space: nowrap; }
+  .stats { display: flex; gap: 6px; }
+  .stat { background: #eef2ff; border-radius: 10px; padding: 2px 10px; text-align: center; min-width: 62px; }
+  .stat .v { font-size: 1.15rem; font-weight: 800; color: var(--brand-dark); line-height: 1.2; }
+  .stat .l { font-size: .6rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--good); transition: width .1s; }
+
+  .textbox { position: relative; }
+  #pacer {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #f97316;
+    border: 2px solid #fff; box-shadow: 0 0 0 2px #f97316, 0 2px 6px rgba(0,0,0,.35);
+    transform: translateX(-50%); pointer-events: none; z-index: 2;
+  }
+  .pacer-legend { text-align: center; font-size: .82rem; color: var(--muted); font-weight: 700; line-height: 1.2; }
+  .pacer-legend .pdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f97316; vertical-align: -1px; margin-right: 6px; }
+
+  #text {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: clamp(1.15rem, min(2.5vw, 4.8vh), 2.4rem); line-height: 1.7;
+    background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 14px;
+    user-select: none;
+  }
+  #text .w { white-space: nowrap; }
+  #text .ch { display: inline-block; min-width: .6em; text-align: center; border-bottom: 3px solid transparent; }
+  #text .ch.done { color: var(--good); }
+  #text .ch.cur { background: #fef08a; border-bottom-color: var(--brand); border-radius: 4px; }
+  #text .ch.cur.err { background: #fecaca; border-bottom-color: var(--bad); animation: shake .2s; }
+  #text .ch.sp.done { border-bottom: 3px solid #bbf7d0; }
+  #text .ch.sp:not(.done) { border-bottom: 3px solid #cbd5e1; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+  #coach {
+    padding: 5px 12px; border-radius: 10px; font-size: clamp(.9rem, 2.2vh, 1.1rem); font-weight: 700;
+    background: #eef2ff; color: var(--brand-dark); text-align: center; line-height: 1.25;
+  }
+  #coach.bad { background: #fee2e2; color: var(--bad); }
+  #coach .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 6px; }
+
+  /* the hands take whatever height is left over */
+  #lessonHands { flex: 1 1 0; min-height: 64px; position: relative; }
+  #lessonHands .hands { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hands text { font-family: "Trebuchet MS", sans-serif; font-weight: 800; fill: #1f2937; pointer-events: none; }
+  .hands rect[data-f] { transition: fill-opacity .12s, stroke-width .12s; }
+
+  /* keyboard scales with both screen width and height */
+  .kb {
+    --k: min(calc((100vw - 40px) / 12.4), 7.4vh, 66px);
+    margin: 0 auto 2px; flex: none; user-select: none;
+  }
+  .kb .row { display: flex; gap: calc(var(--k) * .12); margin-bottom: calc(var(--k) * .12); }
+  .kb .row:nth-child(2) { margin-left: calc(var(--k) * .45); }
+  .kb .row:nth-child(3) { margin-left: calc(var(--k) * 1.05); }
+  .kb .row.spacerow { margin-left: calc(var(--k) * 2.4); margin-bottom: 0; }
+  .key {
+    width: var(--k); height: var(--k); border-radius: calc(var(--k) * .2); border: 2px solid rgba(0,0,0,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Courier New", monospace; font-weight: 800; font-size: calc(var(--k) * .42); text-transform: uppercase;
+    position: relative; transition: transform .08s, opacity .12s;
+  }
+  .key.space { width: calc(var(--k) * 6.2); font-size: calc(var(--k) * .3); }
+  .key.off { opacity: .3; }
+  .key.next { transform: scale(1.15); border: 3px solid #111827; box-shadow: 0 4px 12px rgba(0,0,0,.35); opacity: 1; z-index: 2; }
+  .key.wrong { background: #fecaca !important; border-color: var(--bad); }
+  .key.bump::after { content: ""; position: absolute; bottom: calc(var(--k) * .12); width: calc(var(--k) * .33); height: 3px; background: #111827; border-radius: 2px; }
+  .kb.hide .key { color: transparent; }
+
+  /* ---------- results ---------- */
+  #results {
+    position: fixed; inset: 0; background: rgba(15,23,42,.55); display: flex;
+    align-items: center; justify-content: center; padding: 12px; z-index: 10;
+  }
+  .modal { background: #fff; border-radius: 20px; padding: 18px 22px; max-width: 460px; width: 100%; text-align: center; max-height: 94vh; overflow-y: auto; }
+  .modal p { margin: 4px 0; }
+  .rank { background: #fffbeb; border: 2px solid #fcd34d; border-radius: 14px; padding: 8px 14px; margin-top: 8px; }
+  .rank .rank-h { font-size: 1.15rem; font-weight: 800; color: #92400e; }
+  .rank .rank-l { margin: 4px 0; font-weight: 700; }
+  .rank .rank-s { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+  .bigstars { font-size: 2rem; color: #f59e0b; letter-spacing: 4px; line-height: 1.1; }
+  .modal .nums { display: flex; justify-content: center; gap: 12px; margin: 8px 0; }
+  .modal .stat { min-width: 110px; padding: 4px 10px; }
+  .modal .stat .v { font-size: 1.4rem; }
+  .modal .actions { display: flex; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
+  #submitStatus { font-size: .85rem; color: var(--muted); margin-top: 6px; min-height: 18px; }
+
+  /* ---------- leaderboard ---------- */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: .75rem; text-transform: uppercase; color: var(--muted); }
+  tr.me td { background: #fef9c3; font-weight: 800; }
+  .board-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  select { font: inherit; padding: 6px; border-radius: 8px; border: 2px solid var(--line); }
+
+  /* very short screens: tighten a little more */
+  @media (max-height: 560px) {
+    main { padding: 4px 10px; }
+    #lesson { gap: 4px; }
+    .stat .l { display: none; }
+    .pacer-legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="homeLink" role="button" tabindex="0" title="Back to the home page">🖐 Akoranga Typing Challenge</h1>
+  <nav>
+    <button id="navHome">Lessons</button>
+    <button id="navBoard">🏆 Leaderboard</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <section id="home">
+    <div class="card">
+      <h2>Home position</h2>
+      <div id="introHands"></div>
+      <ol class="rules">
+        <li>Rest your <b>left fingers</b> on <b>A S D F</b> and your <b>right fingers</b> on <b>J K L ;</b></li>
+        <li>Feel the bumps on <b>F</b> and <b>J</b>. Your <b>index fingers</b> live there!</li>
+        <li>Both <b>thumbs</b> hover over the <b>space bar</b>.</li>
+        <li>Match the colours: every key has its own finger. Return <b>home</b> after each key.</li>
+        <li>No peeking at the keyboard. Eyes on the words!</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Who's typing?</h2>
+      <div class="name-row">
+        <div class="ac">
+          <input id="nameInput" placeholder="Start typing your name…" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-autocomplete="list" aria-controls="nameList">
+          <ul id="nameList" class="ac-list" role="listbox" hidden></ul>
+        </div>
+        <span id="nameHint" class="muted small">Start typing, then pick your name from the list.</span>
+      </div>
+      <h2>Pick a lesson</h2>
+      <div class="lessons" id="lessonList"></div>
+      <p class="muted small">Get <b>90% accuracy</b> or better to unlock the next lesson. Accuracy first, speed will follow!</p>
+      <div class="foot"><a id="unlockAll">Teacher: unlock all lessons</a></div>
+    </div>
+  </section>
+
+  <!-- LESSON -->
+  <section id="lesson" hidden>
+    <div class="topbar">
+      <button class="tbtn" id="backBtn">← Lessons</button>
+      <div class="title"><div class="muted" id="lessonNum"></div><h2 id="lessonTitle"></h2></div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="sWpm">0</div><div class="l">WPM</div></div>
+        <div class="stat"><div class="v" id="sAcc">100%</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v" id="sTime">0:00</div><div class="l">Time</div></div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="hideKeys"> Hide letters</label>
+      <button class="tbtn restart" id="restartBtn" title="Shortcut: press the Tab key">↻ Start again <small>(Tab)</small></button>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="textbox"><div id="text"></div><div id="pacer" hidden></div></div>
+    <div class="pacer-legend" id="pacerLegend"></div>
+    <div id="coach"></div>
+    <div id="lessonHands"></div>
+    <div class="kb" id="kb"></div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section id="board" hidden>
+    <div class="card">
+      <h2>🏆 Fastest typists</h2>
+      <div class="board-top">
+        <label>Lesson: <select id="boardFilter"></select></label>
+        <button class="ghost" id="boardRefresh">Refresh</button>
+        <span class="muted" id="boardNote"></span>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>WPM</th><th>Accuracy</th><th>Lesson</th></tr></thead>
+        <tbody id="boardBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- RESULTS -->
+<div id="results" hidden>
+  <div class="modal">
+    <div class="bigstars" id="rStars"></div>
+    <h2 id="rTitle"></h2>
+    <div class="nums">
+      <div class="stat"><div class="v" id="rWpm"></div><div class="l">WPM</div></div>
+      <div class="stat"><div class="v" id="rAcc"></div><div class="l">Accuracy</div></div>
+    </div>
+    <p id="rMsg"></p>
+    <p id="rPace" style="font-weight:800;color:#c2410c"></p>
+    <p class="muted" id="rMissed"></p>
+    <div class="rank" id="rRank" hidden></div>
+    <div id="submitStatus"></div>
+    <div class="actions">
+      <button class="ghost" id="rAgain">Try again</button>
+      <button class="primary" id="rNext">Next lesson →</button>
+      <button class="ghost" id="rHome">Lessons</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SETTINGS
+   Paste your Google Apps Script web-app URL between the quotes
+   (it ends in /exec). Leave it empty to keep scores on this
+   computer only.
+   ============================================================ */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPSC32KcFH4Ui0YkquUPl748DX5KQi2zoVPRohTe2XC1m6Pn4p3XCeUpuU9-DHWlfRGQ/exec";
+
+const MIN_ACCURACY = 90;      // % needed to pass a lesson / post a score
+const PASSAGE_LENGTH = 45;    // characters per round (longer in the last lesson)
+const FIRST_PACE = 15;        // WPM of the pacer dot on a player's first attempt at a lesson
+
+/* ---------- Fingers ---------- */
+const FINGERS = {
+  lp: { name: "left pinky",   color: "#ef4444", key: "A" },
+  lr: { name: "left ring finger",   color: "#f97316", key: "S" },
+  lm: { name: "left middle finger", color: "#eab308", key: "D" },
+  li: { name: "left index finger",  color: "#22c55e", key: "F" },
+  ri: { name: "right index finger", color: "#14b8a6", key: "J" },
+  rm: { name: "right middle finger",color: "#3b82f6", key: "K" },
+  rr: { name: "right ring finger",  color: "#8b5cf6", key: "L" },
+  rp: { name: "right pinky",  color: "#ec4899", key: ";" },
+  th: { name: "thumb",        color: "#94a3b8", key: "␣" }
+};
+const ROWS = ["qwertyuiop", "asdfghjkl;", "zxcvbnm,./"];
+const FMAP = {};
+[["lp","qaz"],["lr","wsx"],["lm","edc"],["li","rfvtgb"],
+ ["ri","yhnujm"],["rm","ik,"],["rr","ol."],["rp","p;/"]
+].forEach(([f, ks]) => [...ks].forEach(k => FMAP[k] = f));
+FMAP[" "] = "th";
+
+/* ---------- Lessons ---------- */
+const WORDS = ["a","as","ask","add","dad","sad","lad","fad","gas","has","had","all","fall","hall","flag",
+  "glad","dash","hash","lash","half","salad","flask","shall","flash","slash","alfalfa","salads","asks",
+  "flags","glass","lass","gall","shad","jag","lag","sag","hag","flak","alas","lads","dads","ash","gash","ha","ah"];
+
+const LESSONS = [
+  { title: "F and J",      keys: "fj",       fresh: "fj", tip: "Index fingers only! Feel the bumps on F and J, then come home." },
+  { title: "D and K",      keys: "fjdk",     fresh: "dk", tip: "Middle fingers reach D and K. Keep the other fingers resting." },
+  { title: "S and L",      keys: "fjdksl",   fresh: "sl", tip: "Ring fingers! They're a bit lazy, so take it slowly." },
+  { title: "A and ;",      keys: "fjdksla;", fresh: "a;", tip: "Pinkies for A and the semicolon. Keep your wrists relaxed." },
+  { title: "G and H",      keys: "fjdksla;gh", fresh: "gh", tip: "Index fingers stretch one key inward, then snap back to F and J." },
+  { title: "Home row words", words: WORDS, tip: "Real words! Type smoothly and keep your thumbs ready for space." },
+  { title: "Home row challenge", words: WORDS, semi: true, len: 75, tip: "A longer round with semicolons. Stay accurate, then go faster!" }
+];
+
+/* ---------- Class roster ----------
+   Only these names can be chosen. If you change this list, change ROSTER in Code.gs too. */
+const ROSTER = [
+  "Zoe B.", "Thea B.", "Esme D.", "Bailey D.", "Azmaan G.", "Christopher G.", "Georgia H.", "Elin H.",
+  "Leo H.", "George M.", "Nixon M.", "Shanaya M.", "Chloe M.", "Mitchell O.", "Monty S.", "Archie S.",
+  "Oliver T.", "Elise T.", "Indi vB", "William vR", "Hudson W.", "Roman W.", "Oliver W.", "Max W.",
+  "Caitlyn W.", "Jazmine W.", "Michael Y.", "Joshua Y.", "Mr Mills"
+];
+const findName = s => ROSTER.find(n => n.toLowerCase() === String(s).trim().toLowerCase()) || "";
+
+/* ---------- Storage (progress is kept per student, so computers can be shared) ---------- */
+const STORE_KEY = "akorangaTyping.v2";
+let P = { name: "", hide: false, unlockAll: false, players: {} };
+function load() { try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s) P = Object.assign(P, s); } catch (e) {} }
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(P)); } catch (e) {} }
+load();
+P.name = findName(P.name);
+function me() {
+  if (!P.name) return { unlocked: 1, best: {} };
+  return P.players[P.name] || (P.players[P.name] = { unlocked: 1, best: {} });
+}
+function unlockedCount() { return P.unlockAll ? LESSONS.length : me().unlocked; }
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+
+function makeText(L) {
+  const target = L.len || PASSAGE_LENGTH;
+  const out = [];
+  let len = 0;
+  while (len < target) {
+    let tok;
+    if (L.words) {
+      tok = pick(L.words);
+      if (L.semi && Math.random() < 0.2) tok += ";";
+    } else {
+      const n = 2 + rnd(3);
+      tok = "";
+      for (let i = 0; i < n; i++) tok += L.keys[rnd(L.keys.length)];
+      if (Math.random() < 0.75 && ![...tok].some(c => L.fresh.includes(c))) {
+        const p = rnd(tok.length);
+        tok = tok.slice(0, p) + L.fresh[rnd(L.fresh.length)] + tok.slice(p + 1);
+      }
+    }
+    if (out.length && out[out.length - 1] === tok) continue;
+    out.push(tok);
+    len += tok.length + 1;
+  }
+  return out.join(" ");
+}
+
+/* ---------- Hands (SVG) ---------- */
+function createHands(container, showHomeKeys) {
+  const left = [["lp",10,40,60],["lr",58,40,80],["lm",106,40,90],["li",154,40,80]];
+  const mirror = { lp: "rp", lr: "rr", lm: "rm", li: "ri" };
+  let s = '<svg class="hands" viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg">';
+  s += '<rect x="10" y="110" width="240" height="70" rx="30" fill="#fde7d3" stroke="#e7c6a5"/>';
+  s += '<rect x="270" y="110" width="240" height="70" rx="30" fill="#fde7d3" stroke="#e7c6a5"/>';
+  const draw = (id, x, w, h, top, label) => {
+    const f = FINGERS[id];
+    s += `<rect data-f="${id}" x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="${f.color}" fill-opacity=".5" stroke="${f.color}" stroke-width="2"/>`;
+    if (label) s += `<text x="${x + w / 2}" y="${top + 30}" font-size="${label.length > 1 ? 13 : 22}" text-anchor="middle">${label}</text>`;
+  };
+  left.forEach(([id, x, w, h]) => {
+    draw(id, x, w, h, 120 - h, showHomeKeys ? FINGERS[id].key : "");
+    const rid = mirror[id];
+    draw(rid, 520 - x - w, w, h, 120 - h, showHomeKeys ? FINGERS[rid].key : "");
+  });
+  draw("th", 205, 45, 50, 95, showHomeKeys ? "space" : "");
+  draw("th", 270, 45, 50, 95, showHomeKeys ? "space" : "");
+  s += '<text x="130" y="168" font-size="14" text-anchor="middle">Left hand</text>';
+  s += '<text x="390" y="168" font-size="14" text-anchor="middle">Right hand</text>';
+  s += "</svg>";
+  container.innerHTML = s;
+  const rects = [...container.querySelectorAll("rect[data-f]")];
+  return {
+    set(active) {
+      rects.forEach(r => {
+        const on = active && r.dataset.f === active;
+        r.setAttribute("fill-opacity", active ? (on ? 1 : 0.22) : 0.5);
+        r.setAttribute("stroke-width", on ? 5 : 2);
+        r.setAttribute("stroke", on ? "#111827" : FINGERS[r.dataset.f].color);
+      });
+    }
+  };
+}
+const introHands = createHands($("introHands"), true);
+const lessonHands = createHands($("lessonHands"), true);
+
+/* ---------- Keyboard ---------- */
+const kbEl = $("kb");
+const keyEls = {};
+(function buildKb() {
+  ROWS.forEach(r => {
+    const row = document.createElement("div"); row.className = "row";
+    [...r].forEach(k => {
+      const d = document.createElement("div");
+      d.className = "key"; d.textContent = k; d.dataset.k = k;
+      const c = FINGERS[FMAP[k]].color;
+      d.style.background = `color-mix(in srgb, ${c} 35%, white)`;
+      if (k === "f" || k === "j") d.classList.add("bump");
+      keyEls[k] = d; row.appendChild(d);
+    });
+    kbEl.appendChild(row);
+  });
+  const row = document.createElement("div"); row.className = "row spacerow";
+  const sp = document.createElement("div");
+  sp.className = "key space"; sp.dataset.k = " ";
+  sp.style.background = `color-mix(in srgb, ${FINGERS.th.color} 35%, white)`;
+  sp.textContent = "space";
+  keyEls[" "] = sp; row.appendChild(sp); kbEl.appendChild(row);
+})();
+
+/* ---------- State ---------- */
+let S = null;   // current lesson state
+let timer = null;
+let rankToken = 0;   // lets a late leaderboard reply be ignored if the player has moved on
+
+// Leaderboard rows are cached briefly so starting a lesson doesn't wait on the network.
+let rowsCache = { t: 0, rows: null };
+function fetchRows(force) {
+  if (!SCRIPT_URL) return Promise.resolve(null);
+  if (!force && rowsCache.rows && Date.now() - rowsCache.t < 120000) return Promise.resolve(rowsCache.rows);
+  return fetch(SCRIPT_URL + "?action=top")
+    .then(r => r.json())
+    .then(j => { rowsCache = { t: Date.now(), rows: j.rows || [] }; return rowsCache.rows; })
+    .catch(() => null);
+}
+
+function show(id) {
+  ["home", "lesson", "board"].forEach(x => $(x).hidden = x !== id);
+  if (id !== "lesson") { clearInterval(timer); S = null; }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Home ---------- */
+function renderLessons() {
+  const box = $("lessonList");
+  box.innerHTML = "";
+  LESSONS.forEach((L, i) => {
+    const b = document.createElement("button");
+    b.className = "lesson-btn";
+    b.disabled = i >= unlockedCount();
+    const best = me().best[i];
+    const stars = best ? "★".repeat(best.stars) + "☆".repeat(3 - best.stars) : "";
+    b.innerHTML = `<div class="num">Lesson ${i + 1}</div><div class="t"></div>
+      <div class="best">${i >= unlockedCount() ? "🔒 Locked" : best ? `Best: ${best.wpm} WPM · ${best.acc}%` : "Not tried yet"}</div>
+      <div class="stars">${stars}</div>`;
+    b.querySelector(".t").textContent = L.title;
+    b.onclick = () => startLesson(i);
+    box.appendChild(b);
+  });
+}
+$("unlockAll").onclick = () => { P.unlockAll = true; save(); renderLessons(); };
+
+/* ---------- Name picker: class list only, autocompletes as you type ---------- */
+const nameInput = $("nameInput"), nameList = $("nameList"), nameHint = $("nameHint");
+let acItems = [], acIdx = -1;
+
+function setNameHint(msg, bad) { nameHint.textContent = msg; nameHint.className = bad ? "bad-text" : "muted"; }
+function nameMatches(q) {
+  q = q.trim().toLowerCase();
+  if (!q) return ROSTER.slice();
+  const starts = ROSTER.filter(n => n.toLowerCase().startsWith(q));
+  const inside = ROSTER.filter(n => !starts.includes(n) && n.toLowerCase().includes(q));
+  return starts.concat(inside);
+}
+function highlightName() {
+  [...nameList.children].forEach((li, k) => li.classList.toggle("active", k === acIdx));
+  const el = nameList.children[acIdx];
+  if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+}
+function renderNameList() {
+  nameList.innerHTML = "";
+  if (P.name && findName(nameInput.value) === P.name) { nameList.hidden = true; return; }
+  acItems = nameMatches(nameInput.value);
+  if (!acItems.length) {
+    nameList.innerHTML = '<li class="none">No match. Check the spelling, or ask your teacher.</li>';
+    nameList.hidden = false; acIdx = -1; return;
+  }
+  acIdx = 0;
+  acItems.forEach(n => {
+    const li = document.createElement("li");
+    li.textContent = n; li.setAttribute("role", "option");
+    li.onmousedown = ev => { ev.preventDefault(); chooseName(n); };
+    nameList.appendChild(li);
+  });
+  nameList.hidden = false;
+  highlightName();
+}
+function chooseName(n) {
+  nameInput.value = n; P.name = n; save();
+  nameList.hidden = true;
+  nameInput.classList.add("ok"); nameInput.classList.remove("bad");
+  setNameHint("Hi " + n.split(" ")[0] + "! Pick a lesson below.", false);
+  renderLessons();
+  fetchRows(false);   // warm the cache so the pacer dot is ready when a lesson starts
+}
+nameInput.addEventListener("input", () => {
+  const exact = findName(nameInput.value);
+  if (exact) { chooseName(exact); return; }
+  P.name = ""; save();
+  nameInput.classList.remove("ok", "bad");
+  setNameHint("Start typing, then pick your name from the list.", false);
+  renderLessons(); renderNameList();
+});
+nameInput.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (nameList.hidden) renderNameList();
+    if (!acItems.length) return;
+    acIdx = (acIdx + (e.key === "ArrowDown" ? 1 : -1) + acItems.length) % acItems.length;
+    highlightName();
+  } else if (e.key === "Enter") {
+    if (!nameList.hidden && acItems[acIdx]) { e.preventDefault(); chooseName(acItems[acIdx]); }
+  } else if (e.key === "Escape") {
+    nameList.hidden = true;
+  }
+});
+nameInput.addEventListener("focus", () => { nameInput.select(); renderNameList(); });
+nameInput.addEventListener("blur", () => {
+  nameList.hidden = true;
+  if (!P.name && nameInput.value.trim()) {
+    nameInput.classList.add("bad");
+    setNameHint("Choose your name from the list so your score goes on the class board.", true);
+  }
+});
+if (P.name) { nameInput.value = P.name; nameInput.classList.add("ok"); setNameHint("Hi " + P.name.split(" ")[0] + "! Pick a lesson below.", false); fetchRows(false); }
+function goHome() { $("results").hidden = true; show("home"); renderLessons(); }
+$("navHome").onclick = goHome;
+$("homeLink").onclick = goHome;   // clicking the title goes home from anywhere
+$("homeLink").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); } });
+$("navBoard").onclick = () => { show("board"); loadBoard(); };
+
+/* ---------- Pacer dot ----------
+   A dot runs along the text at the WPM of the player just above you on this lesson's
+   class board. First attempt (no passing score yet): FIRST_PACE WPM. Top of the class:
+   your own best. It starts moving when you press your first key. */
+function boardFor(i, rows) {
+  const board = {};
+  (rows || []).filter(r => Number(r.lesson) === i + 1 && findName(r.name))
+    .forEach(r => { board[r.name] = Math.max(board[r.name] || 0, Number(r.wpm)); });
+  const lb = me().best[i];   // our own best on this computer, in case it hasn't reached the sheet yet
+  if (lb) board[P.name] = Math.max(board[P.name] || 0, lb.wpm);
+  return board;
+}
+
+function setPacer(st, p) {
+  st.pacer = p;
+  const el = $("pacerLegend");
+  el.innerHTML = "";
+  const dot = document.createElement("span"); dot.className = "pdot";
+  const txt = document.createElement("span");
+  const w = r1(p.wpm);
+  txt.textContent =
+    p.kind === "first"   ? `Starter dot: ${w} WPM. Beat it to get on the class board!` :
+    p.kind === "ahead"   ? `Chasing ${p.name} (${w} WPM)` :
+    p.kind === "top"     ? `You're top of the class! The dot runs 1 WPM faster than your best (${w} WPM).` :
+    p.kind === "own"     ? `The dot runs at your own best (${w} WPM).` :
+                           "Finding your pacer…";
+  el.appendChild(dot); el.appendChild(txt);
+}
+
+async function upgradePacer(st, i) {
+  const rows = await fetchRows(false);
+  if (S !== st || st.done) return;                 // player already left or finished
+  const board = boardFor(i, rows);
+  if (!(P.name in board)) return;
+  if (!rows) { setPacer(st, { wpm: board[P.name], kind: "own" }); return; }   // leaderboard unreachable or not connected
+  const r = computeRank(board, P.name);
+  if (r.ahead) setPacer(st, { wpm: r.ahead.wpm, name: r.ahead.name, kind: "ahead" });
+  else setPacer(st, { wpm: r1(r.mine + 1), kind: "top" });   // top of the class: beat your own best by 1 WPM
+}
+
+function placePacer(chars, pos) {
+  const n = chars.length;
+  if (!n) return;
+  const i = Math.min(n - 1, Math.floor(pos));
+  const frac = pos >= n ? 0 : pos - Math.floor(pos);
+  const a = chars[i], b = chars[Math.min(n - 1, i + 1)];
+  let x = a.offsetLeft + a.offsetWidth / 2;
+  if (b !== a && b.offsetTop === a.offsetTop) x += frac * ((b.offsetLeft + b.offsetWidth / 2) - x);
+  const p = $("pacer");
+  p.style.left = x + "px";
+  p.style.top = (a.offsetTop - 1) + "px";
+}
+
+function startPacer(st) {
+  st.pacerPos = 0; st.pacerT = null;
+  $("pacer").hidden = false;
+  const loop = ts => {
+    if (S !== st || st.done) return;
+    if (st.start) {
+      if (st.pacerT !== null) {
+        const dt = Math.min(ts - st.pacerT, 200);   // cap so a hidden tab doesn't make the dot jump
+        st.pacerPos = Math.min(st.text.length, st.pacerPos + st.pacer.wpm * 5 * dt / 60000);
+      }
+      st.pacerT = ts;
+    }
+    placePacer(st.chars, st.pacerPos);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Lesson ---------- */
+function startLesson(i) {
+  if (!P.name) {
+    nameInput.classList.add("bad");
+    setNameHint("Pick your name from the list first!", true);
+    nameInput.focus();
+    return;
+  }
+  if (i >= unlockedCount()) return;
+  rankToken++;
+  const L = LESSONS[i];
+  const text = makeText(L);
+  S = { i, L, text, pos: 0, correct: 0, total: 0, start: 0, done: false, missed: {}, err: false };
+  clearInterval(timer);
+  $("results").hidden = true;
+  $("lessonNum").textContent = `Lesson ${i + 1} of ${LESSONS.length}`;
+  $("lessonTitle").textContent = L.title;
+  $("hideKeys").checked = !!P.hide;
+  kbEl.classList.toggle("hide", !!P.hide);
+
+  // dim keys that aren't part of this lesson
+  const allowed = new Set([...(L.keys || "asdfghjkl;"), " "]);
+  Object.keys(keyEls).forEach(k => keyEls[k].classList.toggle("off", !allowed.has(k)));
+
+  $("text").innerHTML = "";
+  S.chars = [];
+  let wrap = null;   // each word (plus its trailing space) is kept together so lines never break mid-word
+  [...text].forEach(c => {
+    if (!wrap) { wrap = document.createElement("span"); wrap.className = "w"; $("text").appendChild(wrap); }
+    const s = document.createElement("span");
+    s.className = "ch" + (c === " " ? " sp" : "");
+    s.textContent = c === " " ? "\u00A0" : c;
+    wrap.appendChild(s);
+    S.chars.push(s);
+    if (c === " ") wrap = null;
+  });
+  $("sWpm").textContent = "0"; $("sAcc").textContent = "100%"; $("sTime").textContent = "0:00";
+  $("bar").style.width = "0%";
+  show("lesson");
+  if (document.activeElement) document.activeElement.blur();
+  refresh();
+  setCoach("💡 " + L.tip + " Start typing when you're ready!", false);
+
+  const best0 = me().best[i];
+  if (!best0) setPacer(S, { wpm: FIRST_PACE, kind: "first" });
+  else { setPacer(S, { wpm: best0.wpm, kind: "loading" }); upgradePacer(S, i); }
+  startPacer(S);
+}
+
+function refresh() {
+  S.chars.forEach((el, idx) => {
+    el.classList.toggle("done", idx < S.pos);
+    el.classList.toggle("cur", idx === S.pos);
+    if (idx !== S.pos) el.classList.remove("err");
+  });
+  Object.values(keyEls).forEach(k => k.classList.remove("next"));
+  const next = S.text[S.pos];
+  if (next !== undefined) {
+    keyEls[next] && keyEls[next].classList.add("next");
+    lessonHands.set(FMAP[next]);
+  }
+}
+
+function setCoach(html, bad, color) {
+  const c = $("coach");
+  c.className = bad ? "bad" : "";
+  c.innerHTML = html;
+}
+
+function coachFor(ch) {
+  const f = FINGERS[FMAP[ch]];
+  const label = ch === " " ? "SPACE" : ch.toUpperCase();
+  return `<span class="dot" style="background:${f.color}"></span>Next: <b>${label}</b> with your <b>${f.name}</b>`;
+}
+
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+function calcWpm(chars, ms) { return ms > 0 ? (chars / 5) / (ms / 60000) : 0; }
+
+function tick() {
+  if (!S || S.done || !S.start) return;
+  const ms = performance.now() - S.start;
+  $("sTime").textContent = fmtTime(ms);
+  if (ms > 1500) $("sWpm").textContent = Math.round(calcWpm(S.pos, ms));
+}
+
+function onKey(raw) {
+  if (!S || S.done) return;
+  const ch = raw.toLowerCase();
+  if (!S.start) { S.start = performance.now(); timer = setInterval(tick, 250); }
+  const expected = S.text[S.pos];
+  S.total++;
+  if (ch === expected) {
+    S.pos++; S.correct++;
+    $("bar").style.width = (S.pos / S.text.length * 100) + "%";
+    $("sAcc").textContent = Math.round(S.correct / S.total * 100) + "%";
+    if (S.pos >= S.text.length) return finish();
+    refresh();
+    setCoach(coachFor(S.text[S.pos]), false);
+  } else {
+    S.missed[expected] = (S.missed[expected] || 0) + 1;
+    $("sAcc").textContent = Math.round(S.correct / S.total * 100) + "%";
+    const cur = S.chars[S.pos];
+    cur.classList.remove("err"); void cur.offsetWidth; cur.classList.add("err");
+    const kp = keyEls[ch];
+    if (kp) { kp.classList.add("wrong"); setTimeout(() => kp.classList.remove("wrong"), 220); }
+    const f = FINGERS[FMAP[expected]];
+    const label = expected === " " ? "space" : expected.toUpperCase();
+    setCoach(`Oops! <b>${label}</b> is typed with your <b>${f.name}</b>. Slow down and go back to the home row.`, true);
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (!S || S.done || $("lesson").hidden) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === "Escape") { show("home"); renderLessons(); return; }
+  if (e.key === "Tab") { e.preventDefault(); startLesson(S.i); return; }   // Tab = start again
+  if (e.key.length !== 1) return;
+  e.preventDefault();
+  onKey(e.key);
+});
+document.addEventListener("keyup", e => { if (S && !$("lesson").hidden && e.key === " ") e.preventDefault(); });
+
+$("hideKeys").onchange = e => { P.hide = e.target.checked; save(); kbEl.classList.toggle("hide", P.hide); e.target.blur(); };
+$("restartBtn").onclick = () => startLesson(S.i);
+$("backBtn").onclick = () => { show("home"); renderLessons(); };
+
+/* ---------- Finish ---------- */
+function finish() {
+  S.done = true;
+  clearInterval(timer);
+  const ms = performance.now() - S.start;
+  const wpm = Math.round(calcWpm(S.text.length, ms) * 10) / 10;
+  const acc = Math.round(S.correct / S.total * 100);
+  const passed = acc >= MIN_ACCURACY;
+  const stars = !passed ? 0 : acc >= 98 ? 3 : acc >= 95 ? 2 : 1;
+
+  $("sWpm").textContent = Math.round(wpm);
+  $("bar").style.width = "100%";
+  refresh();
+  Object.values(keyEls).forEach(k => k.classList.remove("next"));
+  lessonHands.set(null);
+
+  const mine = me();
+  const prev = mine.best[S.i];
+  const isBest = passed && (!prev || wpm > prev.wpm);
+  if (passed) {
+    if (!prev || stars > prev.stars || wpm > prev.wpm) {
+      mine.best[S.i] = { wpm: Math.max(wpm, prev ? prev.wpm : 0), acc: isBest ? acc : prev.acc, stars: Math.max(stars, prev ? prev.stars : 0) };
+    }
+    if (S.i + 1 < LESSONS.length && mine.unlocked < S.i + 2) mine.unlocked = S.i + 2;
+    save();
+  }
+
+  $("rStars").textContent = passed ? "★".repeat(stars) + "☆".repeat(3 - stars) : "☆☆☆";
+  $("rTitle").textContent = !passed ? "Nearly there!" : stars === 3 ? "Fantastic typing!" : stars === 2 ? "Great job!" : "Lesson complete!";
+  $("rWpm").textContent = wpm;
+  $("rAcc").textContent = acc + "%";
+  $("rMsg").textContent = !passed
+    ? `You need ${MIN_ACCURACY}% accuracy to move on. Slow down, use the right finger for each key, and try again.`
+    : acc < 98 ? "Next goal: 98% accuracy for three stars. Accurate first, then fast!" : "Super accurate! Now see if you can speed up without losing accuracy.";
+  const miss = Object.entries(S.missed).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k === " " ? "space" : k.toUpperCase());
+  $("rMissed").textContent = miss.length ? `Keys to practise: ${miss.join(", ")}` : "";
+  const last = S.i + 1 >= LESSONS.length;
+  $("rNext").hidden = !passed || last;
+  $("rNext").onclick = () => startLesson(S.i + 1);
+  $("rAgain").onclick = () => startLesson(S.i);
+  $("rHome").onclick = () => { $("results").hidden = true; show("home"); renderLessons(); };
+  const pc = S.pacer;
+  $("rPace").textContent = !passed || pc.kind === "loading" ? "" :
+    pc.kind === "first" ? (wpm >= pc.wpm ? "You beat the starter dot!" : `The starter dot won this time (${pc.wpm} WPM). Stay accurate, then build speed!`) :
+    pc.kind === "ahead" ? (wpm >= pc.wpm ? `You beat ${pc.name}'s pace!` : `${pc.name} stayed ahead this time. Have another go!`) :
+    pc.kind === "top" ? (wpm >= pc.wpm ? "You beat the dot and set a new best!" : "The dot (1 WPM above your best) stayed ahead this time. Have another go!") :
+    (wpm >= pc.wpm ? "You beat your own best pace!" : "Your best pace stayed ahead this time.");
+  $("submitStatus").textContent = "";
+  $("rRank").hidden = true;
+  $("results").hidden = false;
+
+  // send the score (if it's a personal best), then show where they stand in the class
+  const idx = S.i, token = ++rankToken, who = P.name;
+  (async () => {
+    if (isBest) await submitScore(who, wpm, acc, idx + 1);
+    showRank(idx, passed, token);
+  })();
+}
+
+/* ---------- Leaderboard ---------- */
+async function submitScore(name, wpm, acc, lesson) {
+  const st = $("submitStatus");
+  if (!SCRIPT_URL) { st.textContent = "New personal best! (Leaderboard isn't connected, so it's saved on this computer only.)"; return; }
+  st.textContent = "Sending your score…";
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ name, wpm, acc, lesson })
+    });
+    const j = await res.json();
+    st.textContent = j.ok ? "🏆 New personal best, sent to the leaderboard!" : "Couldn't post the score: " + (j.error || "unknown error");
+  } catch (e) {
+    st.textContent = "Couldn't reach the leaderboard. Your score is still saved on this computer.";
+  }
+}
+
+/* ---------- Class ranking (shown after every round) ---------- */
+function ordinal(n) { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+const r1 = x => Math.round(x * 10) / 10;
+
+// board: { name: bestWpm } for one lesson. Rank = 1 + number of players who are strictly faster.
+function computeRank(board, who) {
+  const mine = board[who];
+  const list = Object.keys(board).map(n => ({ name: n, wpm: board[n] }));
+  const above = list.filter(p => p.wpm > mine).sort((a, b) => a.wpm - b.wpm);        // [0] = the player just ahead
+  const below = list.filter(p => p.wpm < mine).sort((a, b) => b.wpm - a.wpm);        // [0] = the player just behind you
+  const tied = list.filter(p => p.name !== who && p.wpm === mine).map(p => p.name);
+  return { rank: above.length + 1, total: list.length, mine, ahead: above[0] || null, behind: below[0] || null, tied };
+}
+
+async function showRank(i, passed, token) {
+  const box = $("rRank");
+  const line = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; box.appendChild(d); };
+  box.hidden = false; box.innerHTML = "";
+  line("rank-l", "Checking the class leaderboard…");
+
+  const lesson = i + 1;
+  const rows = SCRIPT_URL ? await fetchRows(true) : null;
+  if (token !== rankToken) return;           // player already moved on
+  box.innerHTML = "";
+
+  if (!SCRIPT_URL) { line("rank-l", "Connect the Google Sheets leaderboard to see where you rank in the class."); return; }
+  if (!rows) { line("rank-l", "Couldn't load the class leaderboard just now."); return; }
+
+  const board = boardFor(i, rows);   // everyone's best on this lesson, plus our own
+
+  if (!(P.name in board)) {
+    line("rank-l", "Get " + MIN_ACCURACY + "% accuracy or better to join the class leaderboard for this lesson.");
+    return;
+  }
+
+  const r = computeRank(board, P.name);
+  if (!passed) line("rank-s", "That try didn't count (under " + MIN_ACCURACY + "%), but your best score still ranks:");
+  line("rank-h", r.total === 1
+    ? "You're first on the board for Lesson " + lesson + "!"
+    : "You're " + ordinal(r.rank) + " out of " + r.total + " in the class");
+  line("rank-s", "Lesson " + lesson + ": " + LESSONS[i].title);
+
+  if (r.ahead) {
+    line("rank-l", "Just behind " + r.ahead.name + " (" + r1(r.ahead.wpm) + " WPM). Only " + r1(r.ahead.wpm - r.mine) + " WPM to catch up!");
+  } else if (r.total === 1) {
+    line("rank-l", "Everyone else will be chasing your score!");
+  } else if (r.tied.length) {
+    line("rank-l", "Tied for 1st with " + r.tied.join(", ") + "!");
+  } else if (r.behind) {
+    line("rank-l", "Nobody's faster! " + r.behind.name + " is next, " + r1(r.mine - r.behind.wpm) + " WPM behind you.");
+  }
+  if (r.ahead && r.tied.length) line("rank-l", "Level with " + r.tied.join(", ") + ".");
+  line("rank-s", "Your best: " + r1(r.mine) + " WPM. Rankings use everyone's best score on this lesson.");
+}
+
+function fillFilter() {
+  const sel = $("boardFilter");
+  if (sel.options.length) return;
+  sel.innerHTML = '<option value="0">All lessons</option>' + LESSONS.map((L, i) => `<option value="${i + 1}">${i + 1}. ${L.title}</option>`).join("");
+  sel.value = String(LESSONS.length);   // default: the challenge round
+  sel.onchange = () => renderBoard(boardData);
+}
+let boardData = [];
+async function loadBoard() {
+  fillFilter();
+  const note = $("boardNote");
+  if (!SCRIPT_URL) {
+    note.textContent = "Not connected to Google Sheets yet, showing this computer's scores only.";
+    boardData = Object.entries(P.players).flatMap(([name, pl]) =>
+      Object.entries(pl.best).map(([i, b]) => ({ name, wpm: b.wpm, acc: b.acc, lesson: Number(i) + 1 })));
+    return renderBoard(boardData);
+  }
+  note.textContent = "Loading…";
+  try {
+    const res = await fetch(SCRIPT_URL + "?action=top");
+    const j = await res.json();
+    boardData = j.rows || [];
+    note.textContent = "";
+  } catch (e) {
+    boardData = [];
+    note.textContent = "Couldn't load the leaderboard. Check your connection and try Refresh.";
+  }
+  renderBoard(boardData);
+}
+function renderBoard(rows) {
+  const f = Number($("boardFilter").value);
+  const list = rows.filter(r => !f || Number(r.lesson) === f).sort((a, b) => b.wpm - a.wpm).slice(0, 25);
+  const body = $("boardBody");
+  body.innerHTML = "";
+  if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="muted">No scores yet. Be the first!</td></tr>'; return; }
+  list.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    if (P.name && String(r.name).toLowerCase() === P.name.toLowerCase()) tr.className = "me";
+    const medal = ["🥇", "🥈", "🥉"][i] || (i + 1);
+    [medal, r.name, r.wpm, r.acc + "%", `${r.lesson}. ${(LESSONS[r.lesson - 1] || {}).title || ""}`].forEach(v => {
+      const td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+$("boardRefresh").onclick = loadBoard;
+
+/* ---------- Go ---------- */
+introHands.set(null);
+renderLessons();
+</script>
+</body>
+</html>
