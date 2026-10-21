@@ -57,7 +57,7 @@
   button.ghost:hover { background: #eef2ff; }
 
   /* ---------- home: two columns on wide screens, one column on narrow ---------- */
-  #home { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+  #home { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 12px; align-content: start; }
   @media (max-width: 899px) { #home { grid-template-columns: 1fr; } }
   #introHands .hands { display: block; width: 100%; max-width: min(440px, 52vh); margin: 0 auto; }
   .rules { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; font-size: clamp(.95rem, 2.4vh, 1.1rem); }
@@ -82,17 +82,42 @@
   .ac-list li.none { cursor: default; color: var(--muted); }
   .bad-text { color: var(--bad); font-weight: 700; }
 
-  .lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  /* lesson picker: each unit is a row of numbered steps with its own progress bar */
+  .lessons { display: flex; flex-direction: column; gap: 9px; }
+  .ublock { display: flex; flex-direction: column; gap: 6px; }
+  .uhead { display: flex; align-items: center; gap: 10px; }
+  .uname { font-weight: 800; font-size: .98rem; color: var(--ink); white-space: nowrap; }
+  .ucount { font-size: .8rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .ubar { flex: 1; min-width: 40px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .ubar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #818cf8, #22c55e); transition: width .3s; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px 8px; }
   .lesson-btn {
-    text-align: left; background: #fff; border: 2px solid var(--line); border-radius: 12px;
-    padding: 7px 10px; cursor: pointer; font: inherit; position: relative;
+    display: flex; align-items: center; gap: 8px; text-align: left; font: inherit; line-height: 1.15;
+    background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 6px 8px; cursor: pointer;
+    transition: transform .1s, box-shadow .15s, border-color .15s, background .15s;
   }
-  .lesson-btn:hover:not(:disabled) { border-color: var(--brand); background: #f5f3ff; }
-  .lesson-btn:disabled { opacity: .5; cursor: not-allowed; }
-  .lesson-btn .num { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
-  .lesson-btn .t { font-size: 1rem; font-weight: 800; }
-  .lesson-btn .best { font-size: .8rem; color: var(--muted); }
-  .lesson-btn .stars { position: absolute; top: 6px; right: 10px; color: #f59e0b; letter-spacing: 1px; font-size: .9rem; }
+  .lesson-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: #a5b4fc; box-shadow: 0 4px 10px rgba(79,70,229,.14); }
+  .lesson-btn:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 2px; }
+  .lesson-btn .n {
+    flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: #eef2ff; color: var(--brand-dark); font-weight: 800; font-size: .82rem;
+  }
+  .lesson-btn .txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .lesson-btn .t { font-size: .88rem; font-weight: 800; }
+  .lesson-btn .best { font-size: .74rem; color: var(--muted); font-weight: 600; }
+  .lesson-btn .stars { color: #f59e0b; letter-spacing: 1px; }
+  .lesson-btn.done { background: #f0fdf4; border-color: #bbf7d0; }
+  .lesson-btn.done .n { background: #22c55e; color: #fff; }
+  .lesson-btn.next { background: linear-gradient(135deg, #eef2ff, #fff 70%); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,.16); }
+  .lesson-btn.next .n { background: var(--brand); color: #fff; }
+  .lesson-btn.next .best { color: var(--brand-dark); font-weight: 800; }
+  .lesson-btn:disabled { cursor: not-allowed; background: #f8fafc; }
+  .lesson-btn:disabled .t, .lesson-btn:disabled .best { opacity: .6; }
+  .lesson-btn:disabled .n { background: #e2e8f0; color: #94a3b8; font-size: .8rem; }
+  .lockcard { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; border-radius: 12px; background: #f8fafc; border: 1.5px dashed #cbd5e1; font-size: .86rem; color: #475569; line-height: 1.3; }
+  .lockcard b { color: var(--ink); }
+  .lockcard .goal { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: .8rem; color: var(--muted); }
+  .lockcard .goal .ubar { height: 8px; }
   .foot { margin-top: 8px; color: var(--muted); font-size: .8rem; }
   .foot a { color: var(--muted); cursor: pointer; text-decoration: underline; }
 
@@ -145,7 +170,9 @@
   #coach {
     padding: 5px 12px; border-radius: 10px; font-size: clamp(.9rem, 2.2vh, 1.1rem); font-weight: 700;
     background: #eef2ff; color: var(--brand-dark); text-align: center; line-height: 1.25;
+    min-height: calc(1.25em + 10px);   /* keep its height when empty so the diagram doesn't jump */
   }
+  #coach:empty { visibility: hidden; }
   #coach.bad { background: #fee2e2; color: var(--bad); }
   #coach .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 6px; }
 
@@ -154,6 +181,10 @@
   #lessonHands .hands { position: absolute; inset: 0; width: 100%; height: 100%; }
   .hands text { font-family: "Trebuchet MS", sans-serif; font-weight: 800; fill: #1f2937; pointer-events: none; }
   .hands rect[data-f] { transition: fill-opacity .12s, stroke-width .12s; }
+  .hands g.fg { transition: transform .14s ease-out; }
+  .hands g.gh { opacity: 0; transition: opacity .14s; pointer-events: none; }
+  .hands g.gh.on { opacity: .9; }
+  .hands g.gh text { font-size: 13px; fill: #475569; }
 
   /* keyboard scales with both screen width and height */
   .kb {
@@ -251,7 +282,8 @@
       <h2>Pick a lesson</h2>
       <div class="lessons" id="lessonList"></div>
       <p class="muted small">Get <b>90% accuracy</b> or better to unlock the next lesson. Accuracy first, speed will follow!</p>
-      <div class="foot"><a id="unlockAll">Teacher: unlock all lessons</a></div>
+      <div class="foot"><a id="testConn">Test leaderboard connection</a> · <span id="ver"></span>
+        <div id="connResult" style="margin-top:4px;font-weight:700"></div></div>
     </div>
   </section>
 
@@ -351,16 +383,77 @@ FMAP[" "] = "th";
 /* ---------- Lessons ---------- */
 const WORDS = ["a","as","ask","add","dad","sad","lad","fad","gas","has","had","all","fall","hall","flag",
   "glad","dash","hash","lash","half","salad","flask","shall","flash","slash","alfalfa","salads","asks",
-  "flags","glass","lass","gall","shad","jag","lag","sag","hag","flak","alas","lads","dads","ash","gash","ha","ah"];
+  "flags","glass","lass","gall","shad","jag","lag","sag","flak","alas","lads","dads","ash","gash","ha","ah"];
+
+/* Word bank for the upper row unit: only letters from the top and home rows.
+   Each lesson automatically uses just the words its learned keys can type. */
+const UPPER_WORDS = ("aid aids aisle ails ale ales deal deals desk desks dial dials dish dishes ease easel elf elk elks else " +
+  "fail fails fake fakes false feed feel feels field fields file files fish flake flakes flies geese glide glides hail hails hale " +
+  "hide hides hike hikes idea ideas ill jade jail jails jig jigs kid kids kiss lake lakes laid lead leads leaf lease led less life " +
+  "lid lids like likes lies sail sails sake sale sales said seal seals see seed seeds seek seeks self sell sells shake shakes shed " +
+  "sheds shelf shell shells side sides sigh sighs silk slide slides slid hid his hill hills hi ilk deed eel eels fee fees heel " +
+  "keel lee " +
+  "are area areas agree ark arks dare dares dark ear ears earl far fare fares fear fears flare flares gear gears glare hard hare " +
+  "hares hear hears heard jar jars lair lark larks large rage rages raid raids rail rails raise raised rake rakes read reads real " +
+  "reed reeds reef reel reels rid ride rides rife rig rigs rile rise risk rises rug rugs rule rules ruler rush shark sharks " +
+  "share shares sheer skid skids skier sugar sulk sulks sure surf used user users usual full fuel fuels fur furs flu flue glue " +
+  "gull gulls hug hugs huge jug jugs lure lures lurk " +
+  "ate east fate gate gates get gets hat hats hate jest kit kite kites late lest let lets list lit rate rates seat seats " +
+  "set sets sit site sites skate skates slate state stare tag tags tail tails take tale tales tall task tasks tea teak tear tears " +
+  "tell tells test tests that the their these this thus tide tides tidy tie tied ties tile tiles till tilt tilts tire tired trade " +
+  "trades trail trails treat treats tree trees trial trials true trust trusts " +
+  "day days easy eye eyes fairy gray grey hay hey key keys lady lay lays likely relay relays rely say says sky slay stay stays " +
+  "style styles sulky tasty tray trays try tries yak yaks yard yards yeah year years yell yelled yells yes yet yield yields you " +
+  "your yours " +
+  "door doors dog dogs do doll dolls dot dots food foot for fork forks forest forget forgot four goal goals goat goats gold golf " +
+  "good goose got glow glows grow grows hold holds hole holes hood hoods hook hooks host hot hour hours house houses joke jokes " +
+  "jog jogs jolly joy load loads log logs look looks loose lord lose lost lot lots low owl owls raw road row rows saw saws shoe " +
+  "shoes show shows slow soft soil sold sole solid sort sorts took tool tools tow toy toys too wag wags wait waits wake wakes " +
+  "walk walks wall walls was wash we well wells west wet what wheat wheel who whole wide wild will wise wish wishes wood word " +
+  "words work works world would wow " +
+  "paid pail pair pairs pal pals pale paper party pass past path paths pay pays peak peaks pear pears peel peels pest pet pie " +
+  "pies pig pigs pile piles pill pills pilot pilots pit pits plate plates play plays plot plots plus pole poles pool pools pot " +
+  "pots pour pours power pray press pride pull pulls pup pups pupil pupils pure push put puts up upper keep keeps kept help helps " +
+  "hip hop hope hopes lip lips loop loops leap leaps wipe wipes sip sips slip slips slope spade spare speak speaks spell spells " +
+  "spill spoke sport sports step steps stop stops tap taps top tops trip trips tulip tulips type types " +
+  "quail quake quest quiet quilt quirk quit quite quote quotes quoted quill equal equals queue require request requests squad " +
+  "squid").split(" ");
+
+function mkWordLesson(o) {
+  const allowed = new Set(o.keys);
+  const words = UPPER_WORDS.filter(w => [...w].every(c => allowed.has(c)));
+  const freshWords = words.filter(w => [...w].some(c => o.fresh.includes(c)));
+  // words grouped by each newly taught key, so every new key gets its share of practice
+  const byFresh = {};
+  [...o.fresh].forEach(c => { byFresh[c] = words.filter(w => w.includes(c)); });
+  return Object.assign({}, o, { words, freshWords, byFresh });
+}
+const HOMEKEYS = "asdfghjkl;";
 
 const LESSONS = [
-  { title: "F and J",      keys: "fj",       fresh: "fj", tip: "Index fingers only! Feel the bumps on F and J, then come home." },
-  { title: "D and K",      keys: "fjdk",     fresh: "dk", tip: "Middle fingers reach D and K. Keep the other fingers resting." },
-  { title: "S and L",      keys: "fjdksl",   fresh: "sl", tip: "Ring fingers! They're a bit lazy, so take it slowly." },
-  { title: "A and ;",      keys: "fjdksla;", fresh: "a;", tip: "Pinkies for A and the semicolon. Keep your wrists relaxed." },
-  { title: "G and H",      keys: "fjdksla;gh", fresh: "gh", tip: "Index fingers stretch one key inward, then snap back to F and J." },
-  { title: "Home row words", words: WORDS, tip: "Real words! Type smoothly and keep your thumbs ready for space." },
-  { title: "Home row challenge", words: WORDS, semi: true, len: 75, tip: "A longer round with semicolons. Stay accurate, then go faster!" }
+  { unit: "Home row", title: "F and J",      keys: "fj",       fresh: "fj", tip: "Index fingers only! Feel the bumps on F and J, then come home." },
+  { unit: "Home row", title: "D and K",      keys: "fjdk",     fresh: "dk", tip: "Middle fingers reach D and K. Keep the other fingers resting." },
+  { unit: "Home row", title: "S and L",      keys: "fjdksl",   fresh: "sl", tip: "Ring fingers! They're a bit lazy, so take it slowly." },
+  { unit: "Home row", title: "A and ;",      keys: "fjdksla;", fresh: "a;", tip: "Pinkies for A and the semicolon. Keep your wrists relaxed." },
+  { unit: "Home row", title: "G and H",      keys: "fjdksla;gh", fresh: "gh", tip: "Index fingers stretch one key inward, then snap back to F and J." },
+  { unit: "Home row", title: "Home row words", words: WORDS, tip: "Real words! Type smoothly and keep your thumbs ready for space." },
+  { unit: "Home row", title: "Home row challenge", words: WORDS, semi: true, len: 75, tip: "A longer round with semicolons. Stay accurate, then go faster!" },
+
+  // Upper row unit: each key is reached from its home-row finger, then the finger returns home.
+  mkWordLesson({ unit: "Upper row", title: "E and I", keys: HOMEKEYS + "ei", fresh: "ei",
+    tip: "Middle fingers reach up: the D finger goes to E, the K finger goes to I. Then back home!" }),
+  mkWordLesson({ unit: "Upper row", title: "R and U", keys: HOMEKEYS + "eiru", fresh: "ru",
+    tip: "Index fingers reach up: the F finger goes to R, the J finger goes to U. Return to F and J every time." }),
+  mkWordLesson({ unit: "Upper row", title: "T and Y", keys: HOMEKEYS + "eiruty", fresh: "ty",
+    tip: "Index fingers stretch up and across: F finger to T, J finger to Y. Snap back to the bumps afterwards." }),
+  mkWordLesson({ unit: "Upper row", title: "W and O", keys: HOMEKEYS + "eirutywo", fresh: "wo",
+    tip: "Ring fingers reach up: the S finger goes to W, the L finger goes to O." }),
+  mkWordLesson({ unit: "Upper row", title: "Q and P", keys: HOMEKEYS + "eirutywoqp", fresh: "qp",
+    tip: "Pinkies reach up: the A finger goes to Q, the semicolon finger goes to P. Keep your wrists steady." }),
+  mkWordLesson({ unit: "Upper row", title: "Upper row words", keys: HOMEKEYS + "qwertyuiop", fresh: "qwertyuiop", len: 55,
+    tip: "Words using the top and home rows. Keep your fingers curved and return home after each key." }),
+  mkWordLesson({ unit: "Upper row", title: "Upper row challenge", keys: HOMEKEYS + "qwertyuiop", fresh: "qwertyuiop", semi: true, len: 80,
+    tip: "A longer round with semicolons. Stay accurate, then go faster!" })
 ];
 
 /* ---------- Class roster ----------
@@ -369,9 +462,19 @@ const ROSTER = [
   "Zoe B.", "Thea B.", "Esme D.", "Bailey D.", "Azmaan G.", "Christopher G.", "Georgia H.", "Elin H.",
   "Leo H.", "George M.", "Nixon M.", "Shanaya M.", "Chloe M.", "Mitchell O.", "Monty S.", "Archie S.",
   "Oliver T.", "Elise T.", "Indi vB", "William vR", "Hudson W.", "Roman W.", "Oliver W.", "Max W.",
-  "Caitlyn W.", "Jazmine W.", "Michael Y.", "Joshua Y.", "Mr Mills", "Mrs Milton", "Anonymous"
+  "Caitlyn W.", "Jazmine W.", "Michael Y.", "Joshua Y.", "Mr Mills", "Mrs Milton",
+  "Anonymous"   // page only: not in Code.gs, so Anonymous scores are never added to the class leaderboard
 ];
-const findName = s => ROSTER.find(n => n.toLowerCase() === String(s).trim().toLowerCase()) || "";
+// These profiles always have every lesson unlocked and visible. Must be names from ROSTER.
+const PRIVILEGED = ["Mr Mills", "Mrs Milton", "Anonymous"];
+const ANON = "Anonymous";
+
+// The Upper row unit stays hidden until the Home row challenge (lesson 7) is passed at this speed.
+// (Every saved best already has 90%+ accuracy, because a try under 90% is never saved.)
+const UPPER_GATE = { lesson: 6, wpm: 30 };
+// "Zoe B." -> "Zoe", but keep the title for teachers ("Mr Mills", "Mrs Milton")
+const greetName = n => /^(Mr|Mrs) /.test(n) ? n : n.split(" ")[0];
+const findName = s =>ROSTER.find(n => n.toLowerCase() === String(s).trim().toLowerCase()) || "";
 
 /* ---------- Storage (progress is kept per student, so computers can be shared) ---------- */
 const STORE_KEY = "akorangaTyping.v2";
@@ -380,11 +483,30 @@ function load() { try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); i
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(P)); } catch (e) {} }
 load();
 P.name = findName(P.name);
+// Students who finished every lesson that existed before (e.g. the home row unit) get the new lessons unlocked.
+Object.values(P.players || {}).forEach(pl => {
+  const hi = Math.max(-1, ...Object.keys(pl.best || {}).map(Number));
+  pl.unlocked = Math.max(pl.unlocked || 1, Math.min(LESSONS.length, hi + 2));
+});
 function me() {
   if (!P.name) return { unlocked: 1, best: {} };
   return P.players[P.name] || (P.players[P.name] = { unlocked: 1, best: {} });
 }
-function unlockedCount() { return P.unlockAll ? LESSONS.length : me().unlocked; }
+const isPrivileged = () => PRIVILEGED.includes(P.name);
+const isAnon = () => P.name === ANON;
+// Has this student reached the speed needed to open the Upper row unit?
+function upperOpen() {
+  if (isPrivileged()) return true;
+  const b = me().best[UPPER_GATE.lesson];
+  return !!b && b.wpm >= UPPER_GATE.wpm;
+}
+// Is this lesson shown at all? The Upper row unit is hidden until it has been earned.
+const lessonVisible = L => L.unit !== "Upper row" || upperOpen();
+function unlockedCount() {
+  if (isPrivileged()) return LESSONS.length;
+  const m = me();
+  return upperOpen() ? m.unlocked : Math.min(m.unlocked, UPPER_GATE.lesson + 1);
+}
 
 /* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -398,7 +520,11 @@ function makeText(L) {
   while (len < target) {
     let tok;
     if (L.words) {
-      tok = pick(L.words);
+      // upper row lessons lean towards words that use the newest keys
+      if (L.byFresh && Math.random() < 0.8) {
+        const group = L.byFresh[L.fresh[rnd(L.fresh.length)]];     // choose a new key first, then a word that uses it
+        tok = group && group.length ? pick(group) : pick(L.words);
+      } else tok = pick(L.words);
       if (L.semi && Math.random() < 0.2) tok += ";";
     } else {
       const n = 2 + rnd(3);
@@ -425,8 +551,12 @@ function createHands(container, showHomeKeys) {
   s += '<rect x="270" y="110" width="240" height="70" rx="30" fill="#fde7d3" stroke="#e7c6a5"/>';
   const draw = (id, x, w, h, top, label) => {
     const f = FINGERS[id];
-    s += `<rect data-f="${id}" x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="${f.color}" fill-opacity=".5" stroke="${f.color}" stroke-width="2"/>`;
+    // dashed outline of the finger's home position; shown while the finger is reaching up to a top-row key
+    if (label && id !== "th") s += `<g class="gh" data-gh="${id}"><rect x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="5 4"/>` +
+      `<text x="${x + w / 2}" y="116" font-size="13" text-anchor="middle">${label}</text></g>`;
+    s += `<g class="fg" data-g="${id}"><rect data-f="${id}" x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="${f.color}" fill-opacity=".5" stroke="${f.color}" stroke-width="2"/>`;
     if (label) s += `<text x="${x + w / 2}" y="${top + 30}" font-size="${label.length > 1 ? 13 : 22}" text-anchor="middle">${label}</text>`;
+    s += "</g>";
   };
   left.forEach(([id, x, w, h]) => {
     draw(id, x, w, h, 120 - h, showHomeKeys ? FINGERS[id].key : "");
@@ -440,8 +570,20 @@ function createHands(container, showHomeKeys) {
   s += "</svg>";
   container.innerHTML = s;
   const rects = [...container.querySelectorAll("rect[data-f]")];
+  const groups = [...container.querySelectorAll("g.fg")];
+  const ghosts = [...container.querySelectorAll("g.gh")];
   return {
-    set(active) {
+    // active: the finger to use; ch: the key to press. For a top-row key the finger lifts and shows that
+    // letter; as soon as the next key is something else it goes back to showing its home key.
+    set(active, ch) {
+      const reach = !!(active && ch && active !== "th" && "qwertyuiop".includes(ch));
+      groups.forEach(g => {
+        const id = g.dataset.g, on = id === active && reach;
+        const t = g.querySelector("text");
+        if (t && id !== "th") { t.textContent = on ? ch.toUpperCase() : FINGERS[id].key; t.setAttribute("font-size", on ? 28 : 22); }
+        g.style.transform = on ? "translateY(-16px)" : "";
+      });
+      ghosts.forEach(g => g.classList.toggle("on", reach && g.dataset.gh === active));
       rects.forEach(r => {
         const on = active && r.dataset.f === active;
         r.setAttribute("fill-opacity", active ? (on ? 1 : 0.22) : 0.5);
@@ -504,21 +646,76 @@ function show(id) {
 function renderLessons() {
   const box = $("lessonList");
   box.innerHTML = "";
+  const m = me(), open = unlockedCount();
+  // the first lesson that is open but not yet passed is the one to do next
+  let nextIdx = -1;
+  for (let i = 0; i < LESSONS.length; i++) {
+    if (lessonVisible(LESSONS[i]) && i < open && !m.best[i]) { nextIdx = i; break; }
+  }
+  const units = [];
   LESSONS.forEach((L, i) => {
-    const b = document.createElement("button");
-    b.className = "lesson-btn";
-    b.disabled = i >= unlockedCount();
-    const best = me().best[i];
-    const stars = best ? "★".repeat(best.stars) + "☆".repeat(3 - best.stars) : "";
-    b.innerHTML = `<div class="num">Lesson ${i + 1}</div><div class="t"></div>
-      <div class="best">${i >= unlockedCount() ? "🔒 Locked" : best ? `Best: ${best.wpm} WPM · ${best.acc}%` : "Not tried yet"}</div>
-      <div class="stars">${stars}</div>`;
-    b.querySelector(".t").textContent = L.title;
-    b.onclick = () => startLesson(i);
-    box.appendChild(b);
+    if (!lessonVisible(L)) return;             // Upper row unit stays hidden until it's earned
+    let u = units[units.length - 1];
+    if (!u || u.name !== L.unit) { u = { name: L.unit, items: [] }; units.push(u); }
+    u.items.push(i);
   });
+  units.forEach(u => {
+    const done = u.items.filter(i => m.best[i]).length;
+    const blk = document.createElement("div");
+    blk.className = "ublock";
+    blk.innerHTML = `<div class="uhead"><span class="uname"></span><span class="ucount">${done} of ${u.items.length} done</span>` +
+      `<div class="ubar"><i style="width:${Math.round(done / u.items.length * 100)}%"></i></div></div><div class="tiles"></div>`;
+    blk.querySelector(".uname").textContent = u.name;
+    const tiles = blk.querySelector(".tiles");
+    u.items.forEach(i => {
+      const L = LESSONS[i], best = m.best[i], locked = i >= open;
+      const b = document.createElement("button");
+      b.className = "lesson-btn" + (locked ? " locked" : best ? " done" : i === nextIdx ? " next" : "");
+      b.disabled = locked;
+      const stars = best ? "★".repeat(best.stars) + "☆".repeat(3 - best.stars) : "";
+      const sub = locked ? "Locked" : best ? `<span class="stars">${stars}</span> ${best.wpm} WPM` : i === nextIdx ? "Up next" : "Not tried yet";
+      b.innerHTML = `<span class="n">${locked ? "🔒" : best ? "✓" : i + 1}</span><span class="txt"><span class="t"></span><span class="best">${sub}</span></span>`;
+      b.querySelector(".t").textContent = L.title;
+      b.title = "Lesson " + (i + 1) + ": " + L.title;
+      b.onclick = () => startLesson(i);
+      tiles.appendChild(b);
+    });
+    box.appendChild(blk);
+  });
+
+  // the Upper row unit is hidden until earned, so show what it takes and how close the student is
+  if (P.name && !upperOpen()) {
+    const gate = LESSONS[UPPER_GATE.lesson], b = m.best[UPPER_GATE.lesson];
+    const have = b ? b.wpm : 0, pct = Math.min(100, Math.round(have / UPPER_GATE.wpm * 100));
+    const blk = document.createElement("div");
+    blk.className = "ublock";
+    blk.innerHTML = `<div class="uhead"><span class="uname">🔒 Upper row</span></div>` +
+      `<div class="lockcard"><span>Type <b>${UPPER_GATE.wpm} WPM</b> with <b>${MIN_ACCURACY}%</b> accuracy or better on <b class="gt"></b> to unlock it.</span>` +
+      `<div class="goal"><div class="ubar"><i style="width:${pct}%"></i></div><span>${b ? `${have} of ${UPPER_GATE.wpm} WPM` : "Not tried yet"}</span></div></div>`;
+    blk.querySelector(".gt").textContent = gate.title;
+    box.appendChild(blk);
+  }
 }
-$("unlockAll").onclick = () => { P.unlockAll = true; save(); renderLessons(); };
+
+/* ---------- Teacher tools: version stamp + leaderboard connection test ---------- */
+const APP_VERSION = "v16 · 21 Oct";
+$("ver").textContent = "Page " + APP_VERSION + (SCRIPT_URL ? " · leaderboard URL set" : " · NO leaderboard URL");
+$("testConn").onclick = async () => {
+  const out = $("connResult");
+  const say = (msg, ok) => { out.textContent = msg; out.style.color = ok ? "var(--good)" : "var(--bad)"; };
+  if (!SCRIPT_URL) return say("This copy of the page has no leaderboard URL (SCRIPT_URL is empty). Paste your /exec URL between the quotes near the top of the script.", false);
+  say("Testing…", true); out.style.color = "var(--muted)";
+  let res, text;
+  try { res = await fetch(SCRIPT_URL + "?action=top&t=" + Date.now()); text = await res.text(); }
+  catch (e) { return say("Couldn't reach the script at all. The computer may be offline, or the network may block script.google.com.", false); }
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    return say("Google answered, but not with leaderboard data (HTTP " + res.status + "). Usually the web app isn't set to 'Who has access: Anyone', or this URL is from an old deployment. In Apps Script use Deploy > Manage deployments > Edit > New version.", false);
+  }
+  if (j.error) return say("Connected, but the script reported an error: " + j.error, false);
+  say("Connected! " + (j.rows || []).length + " scores on the leaderboard.", true);
+};
 
 /* ---------- Name picker: class list only, autocompletes as you type ---------- */
 const nameInput = $("nameInput"), nameList = $("nameList"), nameHint = $("nameHint");
@@ -559,7 +756,7 @@ function chooseName(n) {
   nameInput.value = n; P.name = n; save();
   nameList.hidden = true;
   nameInput.classList.add("ok"); nameInput.classList.remove("bad");
-  setNameHint("Hi " + n.split(" ")[0] + "! Pick a lesson below.", false);
+  setNameHint("Hi " + greetName(n) + "! Pick a lesson below.", false);
   renderLessons();
   fetchRows(false);   // warm the cache so the pacer dot is ready when a lesson starts
 }
@@ -592,7 +789,7 @@ nameInput.addEventListener("blur", () => {
     setNameHint("Choose your name from the list so your score goes on the class board.", true);
   }
 });
-if (P.name) { nameInput.value = P.name; nameInput.classList.add("ok"); setNameHint("Hi " + P.name.split(" ")[0] + "! Pick a lesson below.", false); fetchRows(false); }
+if (P.name) { nameInput.value = P.name; nameInput.classList.add("ok"); setNameHint("Hi " + greetName(P.name) + "! Pick a lesson below.", false); fetchRows(false); }
 function goHome() { $("results").hidden = true; show("home"); renderLessons(); }
 $("navHome").onclick = goHome;
 $("homeLink").onclick = goHome;   // clicking the title goes home from anywhere
@@ -729,7 +926,7 @@ function refresh() {
   const next = S.text[S.pos];
   if (next !== undefined) {
     keyEls[next] && keyEls[next].classList.add("next");
-    lessonHands.set(FMAP[next]);
+    lessonHands.set(FMAP[next], next);
   }
 }
 
@@ -739,11 +936,6 @@ function setCoach(html, bad, color) {
   c.innerHTML = html;
 }
 
-function coachFor(ch) {
-  const f = FINGERS[FMAP[ch]];
-  const label = ch === " " ? "SPACE" : ch.toUpperCase();
-  return `<span class="dot" style="background:${f.color}"></span>Next: <b>${label}</b> with your <b>${f.name}</b>`;
-}
 
 function fmtTime(ms) {
   const s = Math.floor(ms / 1000);
@@ -770,7 +962,7 @@ function onKey(raw) {
     $("sAcc").textContent = Math.round(S.correct / S.total * 100) + "%";
     if (S.pos >= S.text.length) return finish();
     refresh();
-    setCoach(coachFor(S.text[S.pos]), false);
+    setCoach("", false);   // the diagram shows the finger, so no "Next:" text; this clears any earlier oops message
   } else {
     S.missed[expected] = (S.missed[expected] || 0) + 1;
     $("sAcc").textContent = Math.round(S.correct / S.total * 100) + "%";
@@ -830,13 +1022,19 @@ function finish() {
   $("rTitle").textContent = !passed ? "Nearly there!" : stars === 3 ? "Fantastic typing!" : stars === 2 ? "Great job!" : "Lesson complete!";
   $("rWpm").textContent = wpm;
   $("rAcc").textContent = acc + "%";
-  $("rMsg").textContent = !passed
+  let msg = !passed
     ? `You need ${MIN_ACCURACY}% accuracy to move on. Slow down, use the right finger for each key, and try again.`
     : acc < 98 ? "Next goal: 98% accuracy for three stars. Accurate first, then fast!" : "Super accurate! Now see if you can speed up without losing accuracy.";
+  // the Home row challenge is the gate to the Upper row unit
+  if (passed && S.i === UPPER_GATE.lesson && !isPrivileged()) {
+    msg = upperOpen()
+      ? "🎉 The Upper row unit is unlocked! Press Next lesson to start it."
+      : `Next goal: ${UPPER_GATE.wpm} WPM (you typed ${Math.round(wpm)}) to unlock the Upper row unit. Keep your accuracy up!`;
+  }
+  $("rMsg").textContent = msg;
   const miss = Object.entries(S.missed).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k === " " ? "space" : k.toUpperCase());
   $("rMissed").textContent = miss.length ? `Keys to practise: ${miss.join(", ")}` : "";
-  const last = S.i + 1 >= LESSONS.length;
-  $("rNext").hidden = !passed || last;
+  $("rNext").hidden = !passed || S.i + 1 >= unlockedCount();   // hidden on the last lesson and while the next one is still locked
   $("rNext").onclick = () => startLesson(S.i + 1);
   $("rAgain").onclick = () => startLesson(S.i);
   $("rHome").onclick = () => { $("results").hidden = true; show("home"); renderLessons(); };
@@ -853,7 +1051,8 @@ function finish() {
   // send the score (if it's a personal best), then show where they stand in the class
   const idx = S.i, token = ++rankToken, who = P.name;
   (async () => {
-    if (isBest) await submitScore(who, wpm, acc, idx + 1);
+    if (who === ANON) $("submitStatus").textContent = "Anonymous scores aren't added to the class leaderboard.";
+    else if (isBest) await submitScore(who, wpm, acc, idx + 1);
     showRank(idx, passed, token);
   })();
 }
@@ -915,9 +1114,10 @@ async function showRank(i, passed, token) {
 
   const r = computeRank(board, P.name);
   if (!passed) line("rank-s", "That try didn't count (under " + MIN_ACCURACY + "%), but your best score still ranks:");
+  const you = isAnon() ? "You'd be " : "You're ";   // Anonymous isn't on the board, so it's a "what if"
   line("rank-h", r.total === 1
-    ? "You're first on the board for Lesson " + lesson + "!"
-    : "You're " + ordinal(r.rank) + " out of " + r.total + " in the class");
+    ? you + "first on the board for Lesson " + lesson + "!"
+    : you + ordinal(r.rank) + " out of " + r.total + " in the class");
   line("rank-s", "Lesson " + lesson + ": " + LESSONS[i].title);
 
   if (r.ahead) {
