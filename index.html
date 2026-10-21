@@ -231,8 +231,25 @@
   th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); }
   th { font-size: .75rem; text-transform: uppercase; color: var(--muted); }
   tr.me td { background: #fef9c3; font-weight: 800; }
-  .board-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
-  select { font: inherit; padding: 6px; border-radius: 8px; border: 2px solid var(--line); }
+  #board { flex: 1 1 0; min-height: 0; }
+  #board .card { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+  .board-top { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+  .tgroup { display: flex; gap: 4px; align-items: center; }
+  .tlabel { font-size: .8rem; color: var(--muted); font-weight: 700; margin-right: 4px; }
+  .tab {
+    min-width: 34px; height: 32px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--line);
+    background: #fff; color: var(--brand-dark); font: inherit; font-weight: 800; cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .tab:hover { border-color: #a5b4fc; background: #f5f3ff; }
+  .tab:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 2px; }
+  .tab.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .tab.all { padding: 0 14px; }
+  button.slim { padding: 5px 12px; border-radius: 9px; font-size: .88rem; white-space: nowrap; }
+  .board-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; font-size: 1.02rem; }
+  .board-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .board-scroll th { position: sticky; top: 0; background: #fff; z-index: 1; }
 
   /* very short screens: tighten a little more */
   @media (max-height: 560px) {
@@ -313,14 +330,16 @@
     <div class="card">
       <h2>🏆 Fastest typists</h2>
       <div class="board-top">
-        <label>Lesson: <select id="boardFilter"></select></label>
-        <button class="ghost" id="boardRefresh">Refresh</button>
-        <span class="muted" id="boardNote"></span>
+        <div class="tabs" id="boardTabs" role="tablist" aria-label="Choose a lesson"></div>
+        <button class="ghost slim" id="boardRefresh">Refresh</button>
       </div>
-      <table>
-        <thead><tr><th>#</th><th>Name</th><th>WPM</th><th>Accuracy</th><th>Lesson</th></tr></thead>
-        <tbody id="boardBody"></tbody>
-      </table>
+      <div class="board-title"><b id="boardTitle"></b><span class="muted" id="boardNote"></span></div>
+      <div class="board-scroll">
+        <table>
+          <thead id="boardHead"></thead>
+          <tbody id="boardBody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -698,7 +717,7 @@ function renderLessons() {
 }
 
 /* ---------- Teacher tools: version stamp + leaderboard connection test ---------- */
-const APP_VERSION = "v16 · 21 Oct";
+const APP_VERSION = "v17 · 21 Oct";
 $("ver").textContent = "Page " + APP_VERSION + (SCRIPT_URL ? " · leaderboard URL set" : " · NO leaderboard URL");
 $("testConn").onclick = async () => {
   const out = $("connResult");
@@ -794,7 +813,7 @@ function goHome() { $("results").hidden = true; show("home"); renderLessons(); }
 $("navHome").onclick = goHome;
 $("homeLink").onclick = goHome;   // clicking the title goes home from anywhere
 $("homeLink").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); } });
-$("navBoard").onclick = () => { show("board"); loadBoard(); };
+$("navBoard").onclick = () => { boardSel = 0; show("board"); loadBoard(); };
 
 /* ---------- Pacer dot ----------
    A dot runs along the text at the WPM of the player just above you on this lesson's
@@ -1133,16 +1152,43 @@ async function showRank(i, passed, token) {
   line("rank-s", "Your best: " + r1(r.mine) + " WPM. Rankings use everyone's best score on this lesson.");
 }
 
-function fillFilter() {
-  const sel = $("boardFilter");
-  if (sel.options.length) return;
-  sel.innerHTML = '<option value="0">All lessons</option>' + LESSONS.map((L, i) => `<option value="${i + 1}">${i + 1}. ${L.title}</option>`).join("");
-  sel.value = String(LESSONS.length);   // default: the challenge round
-  sel.onchange = () => renderBoard(boardData);
-}
+let boardSel = 0;      // 0 = all lessons, otherwise the lesson number (1-14)
 let boardData = [];
+const boardLessonVisible = n => lessonVisible(LESSONS[n - 1]);   // the Upper row stays hidden until it's earned
+
+function buildTabs() {
+  const box = $("boardTabs");
+  box.innerHTML = "";
+  const mk = (label, n, cls, title) => {
+    const b = document.createElement("button");
+    b.className = "tab " + cls + (boardSel === n ? " on" : "");
+    b.textContent = label; b.title = title;
+    b.setAttribute("role", "tab"); b.setAttribute("aria-selected", boardSel === n ? "true" : "false");
+    b.onclick = () => { boardSel = n; buildTabs(); renderBoard(boardData); };
+    return b;
+  };
+  box.appendChild(mk("All lessons", 0, "all", "Every lesson"));
+  const groups = [];
+  LESSONS.forEach((L, i) => {
+    if (!boardLessonVisible(i + 1)) return;
+    let g = groups[groups.length - 1];
+    if (!g || g.name !== L.unit) { g = { name: L.unit, items: [] }; groups.push(g); }
+    g.items.push(i + 1);
+  });
+  groups.forEach(g => {
+    const wrap = document.createElement("div");
+    wrap.className = "tgroup";
+    const lab = document.createElement("span");
+    lab.className = "tlabel"; lab.textContent = g.name;
+    wrap.appendChild(lab);
+    g.items.forEach(n => wrap.appendChild(mk(String(n), n, "", `Lesson ${n}: ${LESSONS[n - 1].title}`)));
+    box.appendChild(wrap);
+  });
+}
+
 async function loadBoard() {
-  fillFilter();
+  if (boardSel && !boardLessonVisible(boardSel)) boardSel = 0;
+  buildTabs();
   const note = $("boardNote");
   if (!SCRIPT_URL) {
     note.textContent = "Not connected to Google Sheets yet, showing this computer's scores only.";
@@ -1151,6 +1197,7 @@ async function loadBoard() {
     return renderBoard(boardData);
   }
   note.textContent = "Loading…";
+  renderBoard([]);
   try {
     const res = await fetch(SCRIPT_URL + "?action=top");
     const j = await res.json();
@@ -1162,19 +1209,34 @@ async function loadBoard() {
   }
   renderBoard(boardData);
 }
+
 function renderBoard(rows) {
-  const f = Number($("boardFilter").value);
-  const list = rows.filter(r => !f || Number(r.lesson) === f).sort((a, b) => b.wpm - a.wpm).slice(0, 25);
+  const f = boardSel;
+  $("boardTitle").textContent = f ? `Lesson ${f}: ${LESSONS[f - 1].title}` : "All lessons";
+  const list = rows
+    .filter(r => boardLessonVisible(Number(r.lesson)) && (!f || Number(r.lesson) === f))
+    .sort((a, b) => b.wpm - a.wpm).slice(0, 40);
+  const cols = f ? ["#", "Name", "WPM", "Accuracy"] : ["#", "Name", "WPM", "Accuracy", "Lesson"];
+  const head = $("boardHead");
+  head.innerHTML = "";
+  const hr = document.createElement("tr");
+  cols.forEach(c => { const th = document.createElement("th"); th.textContent = c; hr.appendChild(th); });
+  head.appendChild(hr);
   const body = $("boardBody");
   body.innerHTML = "";
-  if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="muted">No scores yet. Be the first!</td></tr>'; return; }
+  if (!list.length) {
+    const tr = document.createElement("tr"), td = document.createElement("td");
+    td.colSpan = cols.length; td.className = "muted";
+    td.textContent = $("boardNote").textContent === "Loading…" ? "" : "No scores yet. Be the first!";
+    tr.appendChild(td); body.appendChild(tr); return;
+  }
   list.forEach((r, i) => {
     const tr = document.createElement("tr");
     if (P.name && String(r.name).toLowerCase() === P.name.toLowerCase()) tr.className = "me";
     const medal = ["🥇", "🥈", "🥉"][i] || (i + 1);
-    [medal, r.name, r.wpm, r.acc + "%", `${r.lesson}. ${(LESSONS[r.lesson - 1] || {}).title || ""}`].forEach(v => {
-      const td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
-    });
+    const cells = [medal, r.name, r.wpm, r.acc + "%"];
+    if (!f) cells.push(`${r.lesson}. ${(LESSONS[r.lesson - 1] || {}).title || ""}`);
+    cells.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
     body.appendChild(tr);
   });
 }
