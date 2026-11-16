@@ -438,16 +438,38 @@ const UPPER_WORDS = ("aid aids aisle ails ale ales deal deals desk desks dial di
   "quail quake quest quiet quilt quirk quit quite quote quotes quoted quill equal equals queue require request requests squad " +
   "squid").split(" ");
 
+/* Extra words for the bottom row unit. Those lessons allow every row, so the words can use any learned key. */
+const BOTTOM_WORDS = ("van vans very over move moves never even love give have live five seven voice value visit river drive drove " +
+  "save wave vase view vote level brave cover favor nerve solve valve vivid event ever eleven invite arrive alive evil " +
+  "man many make made more most much must mine mind mile milk mother name same time home game come some dream farm form from item " +
+  "mail main may me meet men met mix moon music my team them theme warm room remember small smile smell swim sum summer film " +
+  "cab can cap car care cars case cat cats cell city class clean clear clock close club coat cold come cook cool copy cost count " +
+  "cup cut cute decide deck disc face fact fancy pack lack back black block clap clip crab creep cross crowd cruel cycle dance " +
+  "juice juicy jackal ace acre scale scare scene score scout scrap scrape stick stack stuck track trick truck quick " +
+  "axe tax text next exit exam example expect extra fox box boxes fix fixes mix mixes six sixty relax relaxed wax taxi taxes " +
+  "excel excite exact oxen flax lax max sax index complex " +
+  "zoo zero zone zip zips zeal zest zeros size sizes prize prizes seize quiz quizzes lazy crazy dizzy fuzzy jazz maze freeze breeze " +
+  "gaze glaze graze razor zebra zinc zing zap zig zag zags adz buzz fizz fizzy frozen dozen " +
+  "bad bag ball band bank bat bath be bear bed bee beef bell best big bike bill bird bit bite blue boat body bold bone book boot " +
+  "born both bowl boy brain bread bridge bright bring brother bug build bus busy but buy by cab cabin table able above about " +
+  "nail near neat neck need nest net new news nice night nine no noise none nose not note now number nut nurse own open once only " +
+  "any and are ant an anger angle band end hand land sand stand thing think thank than then thin thing three tin ton tune turn " +
+  "snow snake snap snack sneak sink skin spin swan swing win wing wind window winter within nine ninth knit knee knife knock knot " +
+  "know known lemon lens lion lines lane learn lent line link lone long loan mean moan moon noon pan pen pin pine plan plane " +
+  "plant print rain rank ran ring run runs sun sung tank tent ten tent thorn train trend until unit union unless urban").split(" ");
+
 function mkWordLesson(o) {
   const allowed = new Set(o.keys);
-  const words = UPPER_WORDS.filter(w => [...w].every(c => allowed.has(c)));
+  const bank = o.bottom ? UPPER_WORDS.concat(BOTTOM_WORDS) : UPPER_WORDS;
+  const words = [...new Set(bank)].filter(w => [...w].every(c => allowed.has(c)));
   const freshWords = words.filter(w => [...w].some(c => o.fresh.includes(c)));
   // words grouped by each newly taught key, so every new key gets its share of practice
   const byFresh = {};
-  [...o.fresh].forEach(c => { byFresh[c] = words.filter(w => w.includes(c)); });
+  [...o.fresh].filter(c => /[a-z]/.test(c)).forEach(c => { byFresh[c] = words.filter(w => w.includes(c)); });
   return Object.assign({}, o, { words, freshWords, byFresh });
 }
 const HOMEKEYS = "asdfghjkl;";
+const UPPERKEYS = HOMEKEYS + "qwertyuiop";
 
 const LESSONS = [
   { unit: "Home row", title: "F and J",      keys: "fj",       fresh: "fj", tip: "Index fingers only! Feel the bumps on F and J, then come home." },
@@ -472,7 +494,23 @@ const LESSONS = [
   mkWordLesson({ unit: "Upper row", title: "Upper row words", keys: HOMEKEYS + "qwertyuiop", fresh: "qwertyuiop", len: 55,
     tip: "Words using the top and home rows. Keep your fingers curved and return home after each key." }),
   mkWordLesson({ unit: "Upper row", title: "Upper row challenge", keys: HOMEKEYS + "qwertyuiop", fresh: "qwertyuiop", semi: true, len: 80,
-    tip: "A longer round with semicolons. Stay accurate, then go faster!" })
+    tip: "A longer round with semicolons. Stay accurate, then go faster!" }),
+
+  // Bottom row unit: reach DOWN from the home row, then return home.
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "V and M", keys: UPPERKEYS + "vm", fresh: "vm",
+    tip: "Index fingers reach down: the F finger goes to V, the J finger goes to M. Then back to the bumps!" }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "C and comma", keys: UPPERKEYS + "vmc,", fresh: "c,", punct: ",",
+    tip: "Middle fingers reach down: the D finger goes to C, the K finger goes to the comma. Return home each time." }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "X and full stop", keys: UPPERKEYS + "vmc,x.", fresh: "x.", punct: ".",
+    tip: "Ring fingers reach down: the S finger goes to X, the L finger goes to the full stop." }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "Z and slash", keys: UPPERKEYS + "vmc,x.z/", fresh: "z/", punct: "/",
+    tip: "Pinkies reach down: the A finger goes to Z, the semicolon finger goes to the slash. Keep your wrists steady." }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "B and N", keys: UPPERKEYS + "vmc,x.z/bn", fresh: "bn",
+    tip: "Index fingers stretch down and across: F finger to B, J finger to N. Snap back to the bumps afterwards." }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "Bottom row words", keys: UPPERKEYS + "zxcvbnm,./", fresh: "zxcvbnm", punct: ",./", len: 55,
+    tip: "Words using every row. Keep your fingers curved and return home after each key." }),
+  mkWordLesson({ unit: "Bottom row", bottom: true, title: "Bottom row challenge", keys: UPPERKEYS + "zxcvbnm,./", fresh: "zxcvbnm", punct: ",./", semi: true, len: 80,
+    tip: "A longer round with every key. Stay accurate, then go faster!" })
 ];
 
 /* ---------- Class roster ----------
@@ -490,7 +528,13 @@ const ANON = "Anonymous";
 
 // The Upper row unit stays hidden until the Home row challenge (lesson 7) is passed at this speed.
 // (Every saved best already has 90%+ accuracy, because a try under 90% is never saved.)
-const UPPER_GATE = { lesson: 6, wpm: 30 };
+const UPPER_GATE = { unit: "Upper row", lesson: 6, wpm: 30 };
+// The Bottom row unit opens the same way: pass the Upper row challenge (lesson 14) at this speed.
+const BOTTOM_GATE = { unit: "Bottom row", lesson: 13, wpm: 30 };
+const GATES = [UPPER_GATE, BOTTOM_GATE];
+// At this speed (and 90%+) a lesson is "mastered": the student must move on to the next lesson in the unit,
+// and can't go back to it until every lesson in that unit has been completed.
+const MASTER_WPM = 40;
 // "Zoe B." -> "Zoe", but keep the title for teachers ("Mr Mills", "Mrs Milton")
 const greetName = n => /^(Mr|Mrs) /.test(n) ? n : n.split(" ")[0];
 const findName = s =>ROSTER.find(n => n.toLowerCase() === String(s).trim().toLowerCase()) || "";
@@ -529,17 +573,28 @@ const outOfTries = i => !isPrivileged() && triesUsed(i) >= TRY_LIMIT;
 function setTries(i, n) { const m = me(); (m.tries = m.tries || {})[i] = n; save(); }
 const isAnon = () => P.name === ANON;
 // Has this student reached the speed needed to open the Upper row unit?
-function upperOpen() {
+function unitOpen(unit) {
   if (isPrivileged()) return true;
-  const b = me().best[UPPER_GATE.lesson];
-  return !!b && b.wpm >= UPPER_GATE.wpm;
+  const g = GATES.find(g => g.unit === unit);
+  if (!g) return true;
+  const b = me().best[g.lesson];
+  return !!b && b.wpm >= g.wpm;
 }
-// Is this lesson shown at all? The Upper row unit is hidden until it has been earned.
-const lessonVisible = L => L.unit !== "Upper row" || upperOpen();
+const upperOpen = () => unitOpen("Upper row");
+// Is this lesson shown at all? Later units stay hidden until they have been earned.
+const lessonVisible = L => unitOpen(L.unit);
+const unitDone = unit => LESSONS.every((L, j) => L.unit !== unit || me().best[j]);
+// Mastered lessons are closed until the whole unit is finished (teachers are exempt).
+function mastered(i) {
+  if (isPrivileged()) return false;
+  const b = me().best[i], L = LESSONS[i], n = LESSONS[i + 1];
+  return !!b && b.wpm >= MASTER_WPM && !!n && n.unit === L.unit && !unitDone(L.unit);
+}
 function unlockedCount() {
   if (isPrivileged()) return LESSONS.length;
   const m = me();
-  return upperOpen() ? m.unlocked : Math.min(m.unlocked, UPPER_GATE.lesson + 1);
+  const closed = GATES.find(g => !unitOpen(g.unit));
+  return closed ? Math.min(m.unlocked, closed.lesson + 1) : m.unlocked;
 }
 
 /* ---------- Helpers ---------- */
@@ -556,10 +611,12 @@ function makeText(L) {
     if (L.words) {
       // upper row lessons lean towards words that use the newest keys
       if (L.byFresh && Math.random() < 0.8) {
-        const group = L.byFresh[L.fresh[rnd(L.fresh.length)]];     // choose a new key first, then a word that uses it
+        const fk = Object.keys(L.byFresh);
+        const group = L.byFresh[fk[rnd(fk.length)]];     // choose a new key first, then a word that uses it
         tok = group && group.length ? pick(group) : pick(L.words);
       } else tok = pick(L.words);
       if (L.semi && Math.random() < 0.2) tok += ";";
+      else if (L.punct && Math.random() < 0.4) tok += L.punct[rnd(L.punct.length)];   // new punctuation key: , . /
     } else {
       const n = 2 + rnd(3);
       tok = "";
@@ -585,7 +642,7 @@ function createHands(container, showHomeKeys) {
   s += '<rect x="270" y="110" width="240" height="70" rx="30" fill="#fde7d3" stroke="#e7c6a5"/>';
   const draw = (id, x, w, h, top, label) => {
     const f = FINGERS[id];
-    // dashed outline of the finger's home position; shown while the finger is reaching up to a top-row key
+    // dashed outline of the finger's home position; shown while the finger is reaching up (or down) to a key
     if (label && id !== "th") s += `<g class="gh" data-gh="${id}"><rect x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="5 4"/>` +
       `<text x="${x + w / 2}" y="116" font-size="13" text-anchor="middle">${label}</text></g>`;
     s += `<g class="fg" data-g="${id}"><rect data-f="${id}" x="${x}" y="${top}" width="${w}" height="${h}" rx="20" fill="${f.color}" fill-opacity=".5" stroke="${f.color}" stroke-width="2"/>`;
@@ -610,12 +667,14 @@ function createHands(container, showHomeKeys) {
     // active: the finger to use; ch: the key to press. For a top-row key the finger lifts and shows that
     // letter; as soon as the next key is something else it goes back to showing its home key.
     set(active, ch) {
-      const reach = !!(active && ch && active !== "th" && "qwertyuiop".includes(ch));
+      const up = !!(active && ch && active !== "th" && "qwertyuiop".includes(ch));
+      const down = !!(active && ch && active !== "th" && "zxcvbnm,./".includes(ch));
+      const reach = up || down;
       groups.forEach(g => {
         const id = g.dataset.g, on = id === active && reach;
         const t = g.querySelector("text");
         if (t && id !== "th") { t.textContent = on ? ch.toUpperCase() : FINGERS[id].key; t.setAttribute("font-size", on ? 28 : 22); }
-        g.style.transform = on ? "translateY(-16px)" : "";
+        g.style.transform = on ? (down ? "translateY(14px)" : "translateY(-16px)") : "";
       });
       ghosts.forEach(g => g.classList.toggle("on", reach && g.dataset.gh === active));
       rects.forEach(r => {
@@ -702,15 +761,15 @@ function renderLessons() {
     blk.querySelector(".uname").textContent = u.name;
     const tiles = blk.querySelector(".tiles");
     u.items.forEach(i => {
-      const L = LESSONS[i], best = m.best[i], locked = i >= open, spent = !locked && outOfTries(i);
+      const L = LESSONS[i], best = m.best[i], locked = i >= open, spent = !locked && outOfTries(i), done40 = !locked && mastered(i);
       const b = document.createElement("button");
       b.className = "lesson-btn" + (spent ? " locked" : locked ? " locked" : best ? " done" : i === nextIdx ? " next" : "");
-      b.disabled = locked || spent;
+      b.disabled = locked || spent || done40;
       const stars = best ? "★".repeat(best.stars) + "☆".repeat(3 - best.stars) : "";
-      const sub = locked ? "Locked" : spent ? `${best ? best.wpm + " WPM · " : ""}No tries left` : best ? `<span class="stars">${stars}</span> ${best.wpm} WPM` : i === nextIdx ? "Up next" : "Not tried yet";
+      const sub = locked ? "Locked" : spent ? `${best ? best.wpm + " WPM · " : ""}No tries left` : done40 ? `<span class="stars">${stars}</span> ${best.wpm} WPM · Mastered!` : best ? `<span class="stars">${stars}</span> ${best.wpm} WPM` : i === nextIdx ? "Up next" : "Not tried yet";
       b.innerHTML = `<span class="n">${locked || spent ? "🔒" : best ? "✓" : i + 1}</span><span class="txt"><span class="t"></span><span class="best">${sub}</span></span>`;
       b.querySelector(".t").textContent = L.title;
-      b.title = "Lesson " + (i + 1) + ": " + L.title + (!locked && !isPrivileged() && triesUsed(i) ? ` (${triesUsed(i)} of ${TRY_LIMIT} tries used)` : "");
+      b.title = "Lesson " + (i + 1) + ": " + L.title + (done40 ? " (mastered: opens again when the whole unit is done)" : "") + (!locked && !isPrivileged() && triesUsed(i) ? ` (${triesUsed(i)} of ${TRY_LIMIT} tries used)` : "");
       b.onclick = () => startLesson(i);
       tiles.appendChild(b);
     });
@@ -718,14 +777,15 @@ function renderLessons() {
   });
 
   // the Upper row unit is hidden until earned, so show what it takes and how close the student is
-  if (P.name && !upperOpen()) {
-    const gate = LESSONS[UPPER_GATE.lesson], b = m.best[UPPER_GATE.lesson];
-    const have = b ? b.wpm : 0, pct = Math.min(100, Math.round(have / UPPER_GATE.wpm * 100));
+  const GT = GATES.find(g => !unitOpen(g.unit));
+  if (P.name && GT) {
+    const gate = LESSONS[GT.lesson], b = m.best[GT.lesson];
+    const have = b ? b.wpm : 0, pct = Math.min(100, Math.round(have / GT.wpm * 100));
     const blk = document.createElement("div");
     blk.className = "ublock";
-    blk.innerHTML = `<div class="uhead"><span class="uname">🔒 Upper row</span></div>` +
-      `<div class="lockcard"><span>Type <b>${UPPER_GATE.wpm} WPM</b> with <b>${MIN_ACCURACY}%</b> accuracy or better on <b class="gt"></b> to unlock it.</span>` +
-      `<div class="goal"><div class="ubar"><i style="width:${pct}%"></i></div><span>${b ? `${have} of ${UPPER_GATE.wpm} WPM` : "Not tried yet"}</span></div></div>`;
+    blk.innerHTML = `<div class="uhead"><span class="uname">🔒 ${GT.unit}</span></div>` +
+      `<div class="lockcard"><span>Type <b>${GT.wpm} WPM</b> with <b>${MIN_ACCURACY}%</b> accuracy or better on <b class="gt"></b> to unlock it.</span>` +
+      `<div class="goal"><div class="ubar"><i style="width:${pct}%"></i></div><span>${b ? `${have} of ${GT.wpm} WPM` : "Not tried yet"}</span></div></div>`;
     blk.querySelector(".gt").textContent = gate.title;
     box.appendChild(blk);
   }
@@ -738,7 +798,7 @@ function renderLessons() {
 }
 
 /* ---------- Teacher tools: version stamp + leaderboard connection test ---------- */
-const APP_VERSION = "v18 · 22 Oct";
+const APP_VERSION = "v19 · 17 Nov";
 $("ver").textContent = "Page " + APP_VERSION + (SCRIPT_URL ? " · leaderboard URL set" : " · NO leaderboard URL");
 $("testConn").onclick = async () => {
   const out = $("connResult");
@@ -916,7 +976,7 @@ function startLesson(i) {
     return;
   }
   if (i >= unlockedCount()) return;
-  if (outOfTries(i)) { show("home"); renderLessons(); return; }
+  if (outOfTries(i) || mastered(i)) { show("home"); renderLessons(); return; }
   rankToken++;
   const L = LESSONS[i];
   const text = makeText(L);
@@ -1067,11 +1127,14 @@ function finish() {
   let msg = !passed
     ? `You need ${MIN_ACCURACY}% accuracy to move on. Slow down, use the right finger for each key, and try again.`
     : acc < 98 ? "Next goal: 98% accuracy for three stars. Accurate first, then fast!" : "Super accurate! Now see if you can speed up without losing accuracy.";
-  // the Home row challenge is the gate to the Upper row unit
-  if (passed && S.i === UPPER_GATE.lesson && !isPrivileged()) {
-    msg = upperOpen()
-      ? "🎉 The Upper row unit is unlocked! Press Next lesson to start it."
-      : `Next goal: ${UPPER_GATE.wpm} WPM (you typed ${Math.round(wpm)}) to unlock the Upper row unit. Keep your accuracy up!`;
+  // finishing the challenge that opens the next unit
+  const gate = GATES.find(g => g.lesson === S.i);
+  if (passed && gate && !isPrivileged()) {
+    msg = unitOpen(gate.unit)
+      ? `🎉 The ${gate.unit} unit is unlocked! Press Next lesson to start it.`
+      : `Next goal: ${gate.wpm} WPM (you typed ${Math.round(wpm)}) to unlock the ${gate.unit} unit. Keep your accuracy up!`;
+  } else if (passed && mastered(S.i)) {
+    msg = `🚀 ${Math.round(mine.best[S.i].wpm)} WPM: you've mastered this lesson! On to the next one. You can come back to it once you finish the whole ${S.L.unit} unit.`;
   }
   $("rMsg").textContent = msg;
   const miss = Object.entries(S.missed).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k === " " ? "space" : k.toUpperCase());
@@ -1079,11 +1142,11 @@ function finish() {
   const spent = passed && outOfTries(S.i);
   if (spent) {
     $("rMsg").textContent += ` That was your last try on this lesson (best: ${Math.round(mine.best[S.i].wpm)} WPM).`;
-    if (S.i === UPPER_GATE.lesson && !upperOpen()) $("rMsg").textContent += " Ask your teacher if you need another go.";
+    if (gate && !unitOpen(gate.unit)) $("rMsg").textContent += " Ask your teacher if you need another go.";
   } else if (passed && !isPrivileged()) {
     $("rMsg").textContent += ` ${triesLeft(S.i)} ${triesLeft(S.i) === 1 ? "try" : "tries"} left on this lesson.`;
   }
-  $("rAgain").hidden = spent;
+  $("rAgain").hidden = spent || (passed && mastered(S.i));
   $("rNext").hidden = !passed || S.i + 1 >= unlockedCount();   // hidden on the last lesson and while the next one is still locked
   $("rNext").onclick = () => startLesson(S.i + 1);
   $("rAgain").onclick = () => startLesson(S.i);
