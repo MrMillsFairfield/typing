@@ -298,7 +298,7 @@
       </div>
       <h2>Pick a lesson</h2>
       <div class="lessons" id="lessonList"></div>
-      <p class="muted small">Get <b>90% accuracy</b> or better to unlock the next lesson. Accuracy first, speed will follow!</p>
+      <p class="muted small">Get <b>90% accuracy</b> or better to unlock the next lesson. You get <b>10 tries</b> per lesson at 90%+, so make each one count!</p>
       <div class="foot"><a id="testConn">Test leaderboard connection</a> · <span id="ver"></span>
         <div id="connResult" style="margin-top:4px;font-weight:700"></div></div>
     </div>
@@ -374,7 +374,7 @@
    (it ends in /exec). Leave it empty to keep scores on this
    computer only.
    ============================================================ */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvZ5qIOUOGFyly5sDq7XzR0x_ysFZPW3QaqE5LuaSZ-vh1nKsPI4EGLNBlQhe_lBaqFA/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPSC32KcFH4Ui0YkquUPl748DX5KQi2zoVPRohTe2XC1m6Pn4p3XCeUpuU9-DHWlfRGQ/exec";
 
 const MIN_ACCURACY = 90;      // % needed to pass a lesson / post a score
 const PASSAGE_LENGTH = 45;    // characters per round (longer in the last lesson)
@@ -512,6 +512,21 @@ function me() {
   return P.players[P.name] || (P.players[P.name] = { unlocked: 1, best: {} });
 }
 const isPrivileged = () => PRIVILEGED.includes(P.name);
+
+/* ---------- Try limit: 10 completions at 90%+ accuracy per lesson (teachers are exempt) ---------- */
+const TRY_LIMIT = 10;
+function triesUsed(i) {
+  if (!P.name || isPrivileged()) return 0;
+  // the class sheet is the source of truth when we have it (so a teacher can reset a student there)
+  if (SCRIPT_URL && rowsCache.rows) {
+    const r = rowsCache.rows.find(r => r.name === P.name && r.lesson === i + 1);
+    return r && r.tries != null ? r.tries : 0;
+  }
+  return (me().tries || {})[i] || 0;
+}
+const triesLeft = i => Math.max(0, TRY_LIMIT - triesUsed(i));
+const outOfTries = i => !isPrivileged() && triesUsed(i) >= TRY_LIMIT;
+function setTries(i, n) { const m = me(); (m.tries = m.tries || {})[i] = n; save(); }
 const isAnon = () => P.name === ANON;
 // Has this student reached the speed needed to open the Upper row unit?
 function upperOpen() {
@@ -687,15 +702,15 @@ function renderLessons() {
     blk.querySelector(".uname").textContent = u.name;
     const tiles = blk.querySelector(".tiles");
     u.items.forEach(i => {
-      const L = LESSONS[i], best = m.best[i], locked = i >= open;
+      const L = LESSONS[i], best = m.best[i], locked = i >= open, spent = !locked && outOfTries(i);
       const b = document.createElement("button");
-      b.className = "lesson-btn" + (locked ? " locked" : best ? " done" : i === nextIdx ? " next" : "");
-      b.disabled = locked;
+      b.className = "lesson-btn" + (spent ? " locked" : locked ? " locked" : best ? " done" : i === nextIdx ? " next" : "");
+      b.disabled = locked || spent;
       const stars = best ? "★".repeat(best.stars) + "☆".repeat(3 - best.stars) : "";
-      const sub = locked ? "Locked" : best ? `<span class="stars">${stars}</span> ${best.wpm} WPM` : i === nextIdx ? "Up next" : "Not tried yet";
-      b.innerHTML = `<span class="n">${locked ? "🔒" : best ? "✓" : i + 1}</span><span class="txt"><span class="t"></span><span class="best">${sub}</span></span>`;
+      const sub = locked ? "Locked" : spent ? `${best ? best.wpm + " WPM · " : ""}No tries left` : best ? `<span class="stars">${stars}</span> ${best.wpm} WPM` : i === nextIdx ? "Up next" : "Not tried yet";
+      b.innerHTML = `<span class="n">${locked || spent ? "🔒" : best ? "✓" : i + 1}</span><span class="txt"><span class="t"></span><span class="best">${sub}</span></span>`;
       b.querySelector(".t").textContent = L.title;
-      b.title = "Lesson " + (i + 1) + ": " + L.title;
+      b.title = "Lesson " + (i + 1) + ": " + L.title + (!locked && !isPrivileged() && triesUsed(i) ? ` (${triesUsed(i)} of ${TRY_LIMIT} tries used)` : "");
       b.onclick = () => startLesson(i);
       tiles.appendChild(b);
     });
@@ -714,10 +729,16 @@ function renderLessons() {
     blk.querySelector(".gt").textContent = gate.title;
     box.appendChild(blk);
   }
+
+  // pull the class sheet's try counts (once), then redraw so any used-up lessons lock
+  if (SCRIPT_URL && P.name && !isPrivileged() && !rowsCache.rows) {
+    const who = P.name;
+    fetchRows().then(r => { if (r && who === P.name && !$("home").hidden) renderLessons(); });
+  }
 }
 
 /* ---------- Teacher tools: version stamp + leaderboard connection test ---------- */
-const APP_VERSION = "v17 · 21 Oct";
+const APP_VERSION = "v18 · 22 Oct";
 $("ver").textContent = "Page " + APP_VERSION + (SCRIPT_URL ? " · leaderboard URL set" : " · NO leaderboard URL");
 $("testConn").onclick = async () => {
   const out = $("connResult");
@@ -895,13 +916,14 @@ function startLesson(i) {
     return;
   }
   if (i >= unlockedCount()) return;
+  if (outOfTries(i)) { show("home"); renderLessons(); return; }
   rankToken++;
   const L = LESSONS[i];
   const text = makeText(L);
   S = { i, L, text, pos: 0, correct: 0, total: 0, start: 0, done: false, missed: {}, err: false };
   clearInterval(timer);
   $("results").hidden = true;
-  $("lessonNum").textContent = `Lesson ${i + 1} of ${LESSONS.length}`;
+  $("lessonNum").textContent = `Lesson ${i + 1} of ${LESSONS.length}` + (!isPrivileged() && P.name ? ` · ${triesLeft(i)} ${triesLeft(i) === 1 ? "try" : "tries"} left` : "");
   $("lessonTitle").textContent = L.title;
   $("hideKeys").checked = !!P.hide;
   kbEl.classList.toggle("hide", !!P.hide);
@@ -1034,6 +1056,7 @@ function finish() {
       mine.best[S.i] = { wpm: Math.max(wpm, prev ? prev.wpm : 0), acc: isBest ? acc : prev.acc, stars: Math.max(stars, prev ? prev.stars : 0) };
     }
     if (S.i + 1 < LESSONS.length && mine.unlocked < S.i + 2) mine.unlocked = S.i + 2;
+    if (!isPrivileged()) { setTries(S.i, triesUsed(S.i) + 1); rowsCache = { t: 0, rows: null }; }   // a 90%+ finish uses one try
     save();
   }
 
@@ -1053,6 +1076,14 @@ function finish() {
   $("rMsg").textContent = msg;
   const miss = Object.entries(S.missed).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k === " " ? "space" : k.toUpperCase());
   $("rMissed").textContent = miss.length ? `Keys to practise: ${miss.join(", ")}` : "";
+  const spent = passed && outOfTries(S.i);
+  if (spent) {
+    $("rMsg").textContent += ` That was your last try on this lesson (best: ${Math.round(mine.best[S.i].wpm)} WPM).`;
+    if (S.i === UPPER_GATE.lesson && !upperOpen()) $("rMsg").textContent += " Ask your teacher if you need another go.";
+  } else if (passed && !isPrivileged()) {
+    $("rMsg").textContent += ` ${triesLeft(S.i)} ${triesLeft(S.i) === 1 ? "try" : "tries"} left on this lesson.`;
+  }
+  $("rAgain").hidden = spent;
   $("rNext").hidden = !passed || S.i + 1 >= unlockedCount();   // hidden on the last lesson and while the next one is still locked
   $("rNext").onclick = () => startLesson(S.i + 1);
   $("rAgain").onclick = () => startLesson(S.i);
@@ -1071,15 +1102,15 @@ function finish() {
   const idx = S.i, token = ++rankToken, who = P.name;
   (async () => {
     if (who === ANON) $("submitStatus").textContent = "Anonymous scores aren't added to the class leaderboard.";
-    else if (isBest) await submitScore(who, wpm, acc, idx + 1);
+    else if (passed) await submitScore(who, wpm, acc, idx + 1, isBest);
     showRank(idx, passed, token);
   })();
 }
 
 /* ---------- Leaderboard ---------- */
-async function submitScore(name, wpm, acc, lesson) {
+async function submitScore(name, wpm, acc, lesson, isBest) {
   const st = $("submitStatus");
-  if (!SCRIPT_URL) { st.textContent = "New personal best! (Leaderboard isn't connected, so it's saved on this computer only.)"; return; }
+  if (!SCRIPT_URL) { st.textContent = isBest ? "New personal best! (Leaderboard isn't connected, so it's saved on this computer only.)" : ""; return; }
   st.textContent = "Sending your score…";
   try {
     const res = await fetch(SCRIPT_URL, {
@@ -1088,6 +1119,12 @@ async function submitScore(name, wpm, acc, lesson) {
       body: JSON.stringify({ name, wpm, acc, lesson })
     });
     const j = await res.json();
+    rowsCache = { t: 0, rows: null };   // the sheet changed, so reload it next time
+    if (j.limit) { setTries(lesson - 1, TRY_LIMIT); st.textContent = "You've used all your tries on this lesson, so this score wasn't counted."; $("rAgain").hidden = true; return; }
+    if (j.ok && j.tries != null && name === P.name && !isPrivileged()) {
+      setTries(lesson - 1, j.tries);
+      if (j.tries >= TRY_LIMIT) $("rAgain").hidden = true;
+    }
     st.textContent = !j.ok ? "Couldn't post the score: " + (j.error || "unknown error")
       : j.saved === false ? "Your leaderboard score is already higher than this, so it stays as it is."
       : "🏆 New personal best, sent to the leaderboard!";
