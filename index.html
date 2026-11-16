@@ -720,12 +720,29 @@ let rankToken = 0;   // lets a late leaderboard reply be ignored if the player h
 
 // Leaderboard rows are cached briefly so starting a lesson doesn't wait on the network.
 let rowsCache = { t: 0, rows: null };
+// Progress lives in this browser, so a new copy of the page (or a different computer) starts empty.
+// Rebuild this student's lessons from their scores on the class sheet so nothing is lost.
+function mergeSheet(rows) {
+  if (!P.name || P.name === ANON || !rows) return;
+  const m = me();
+  let changed = false;
+  rows.filter(r => r.name === P.name && r.lesson >= 1 && r.lesson <= LESSONS.length).forEach(r => {
+    const i = r.lesson - 1, b = m.best[i];
+    if (!b || r.wpm > b.wpm) {
+      const stars = r.acc >= 98 ? 3 : r.acc >= 95 ? 2 : 1;
+      m.best[i] = { wpm: r.wpm, acc: r.acc, stars: Math.max(stars, b ? b.stars : 0) };
+      changed = true;
+    }
+    if (i + 1 < LESSONS.length && m.unlocked < i + 2) { m.unlocked = i + 2; changed = true; }
+  });
+  if (changed) save();
+}
 function fetchRows(force) {
   if (!SCRIPT_URL) return Promise.resolve(null);
   if (!force && rowsCache.rows && Date.now() - rowsCache.t < 120000) return Promise.resolve(rowsCache.rows);
   return fetch(SCRIPT_URL + "?action=top")
     .then(r => r.json())
-    .then(j => { rowsCache = { t: Date.now(), rows: j.rows || [] }; return rowsCache.rows; })
+    .then(j => { rowsCache = { t: Date.now(), rows: j.rows || [] }; mergeSheet(rowsCache.rows); return rowsCache.rows; })
     .catch(() => null);
 }
 
@@ -737,6 +754,7 @@ function show(id) {
 
 /* ---------- Home ---------- */
 function renderLessons() {
+  if (rowsCache.rows) mergeSheet(rowsCache.rows);   // e.g. after switching student
   const box = $("lessonList");
   box.innerHTML = "";
   const m = me(), open = unlockedCount();
@@ -791,14 +809,14 @@ function renderLessons() {
   }
 
   // pull the class sheet's try counts (once), then redraw so any used-up lessons lock
-  if (SCRIPT_URL && P.name && !isPrivileged() && !rowsCache.rows) {
+  if (SCRIPT_URL && P.name && P.name !== ANON && !rowsCache.rows) {
     const who = P.name;
     fetchRows().then(r => { if (r && who === P.name && !$("home").hidden) renderLessons(); });
   }
 }
 
 /* ---------- Teacher tools: version stamp + leaderboard connection test ---------- */
-const APP_VERSION = "v19 · 17 Nov";
+const APP_VERSION = "v20 · 17 Nov";
 $("ver").textContent = "Page " + APP_VERSION + (SCRIPT_URL ? " · leaderboard URL set" : " · NO leaderboard URL");
 $("testConn").onclick = async () => {
   const out = $("connResult");
